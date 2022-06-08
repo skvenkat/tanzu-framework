@@ -1344,7 +1344,7 @@ spec:
             layout: true
             overwrite: false
             tableType: gpt
-        files:
+        files: 
         - path: /tmp/empty.txt
           owner: "root:root"
           permissions: "0600"
@@ -1401,7 +1401,7 @@ spec:
         managedDisk:
           storageAccountType: Premium_LRS
         osType: Linux
-      sshPublicKey: c3NoLXJzYSBBQUFBQjNOemFDMXljMkVBQUFBQkl3QUFBUUVBdXR2WGhHWFhzN0t5cFV3c1F1dmc3MCtHclVJUXg1YS9QOFBROGhPbWVzZFAwb1hFMElSKzNuN0NGRzhpK0IwV08rdkhCYnc2b3VkSnR6bmNLaE5hU2N3ZFllT1JVbFVLcVN1QXJtU0NjQnpaZDFTTlVSY2NPRWlocjBEUVg5NXk0YjFUS3QxNjl3eVlzZ0JQeDNHcmprc2xJalRDblZKZmdoWlZOZFdKWWJrRVNuck9ySW05KzFsL3JLT09UOWpsR1NER3M1RW5mM2sxTEY3WThTUVVwdXVOZlNKTU9GRlVHTlVxNjY5L0Fod1FJSDJJYjhPQjY5cmV4ajdwQmdCWjFpd3l6eFlWUGZ3aUZSWXR0eFNDRVJiNk82alh4U21KS3FhTkdNcS9QdlJrTVUzTndxNDV1anN1M3l2NmVFSTVLZGpIV0pFdGd3ZWhXa0ZGL2NGcWd3PT0gd2p1bkB2bXdhcmUuY29t
+      sshPublicKey: ""
       vmSize: ${AZURE_CONTROL_PLANE_MACHINE_TYPE}
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
@@ -1417,7 +1417,7 @@ spec:
         managedDisk:
           storageAccountType: Premium_LRS
         osType: Linux
-      sshPublicKey: c3NoLXJzYSBBQUFBQjNOemFDMXljMkVBQUFBQkl3QUFBUUVBdXR2WGhHWFhzN0t5cFV3c1F1dmc3MCtHclVJUXg1YS9QOFBROGhPbWVzZFAwb1hFMElSKzNuN0NGRzhpK0IwV08rdkhCYnc2b3VkSnR6bmNLaE5hU2N3ZFllT1JVbFVLcVN1QXJtU0NjQnpaZDFTTlVSY2NPRWlocjBEUVg5NXk0YjFUS3QxNjl3eVlzZ0JQeDNHcmprc2xJalRDblZKZmdoWlZOZFdKWWJrRVNuck9ySW05KzFsL3JLT09UOWpsR1NER3M1RW5mM2sxTEY3WThTUVVwdXVOZlNKTU9GRlVHTlVxNjY5L0Fod1FJSDJJYjhPQjY5cmV4ajdwQmdCWjFpd3l6eFlWUGZ3aUZSWXR0eFNDRVJiNk82alh4U21KS3FhTkdNcS9QdlJrTVUzTndxNDV1anN1M3l2NmVFSTVLZGpIV0pFdGd3ZWhXa0ZGL2NGcWd3PT0gd2p1bkB2bXdhcmUuY29t
+      sshPublicKey: ""
       vmSize: ${AZURE_NODE_MACHINE_TYPE}
 
 ---
@@ -1446,3 +1446,4 @@ spec:
       useExperimentalRetryJoin: true
       preKubeadmCommands:
       - echo "running preKubeadmCommands…"
+
