@@ -751,12 +751,14 @@ spec:
           template: |
             {{ $first := true }}
             {{- range $key, $val := (index .TKR_DATA .builtin.controlPlane.version).labels }}
+            {{- if regexMatch "^(?:[a-zA-z])(?:[-\\w\\.]*[a-zA-z])$" $val }}
             {{- if $first }}
               {{- $first = false }}
             {{- else -}}
               ,
             {{- end }}
             {{- $key -}} = {{- $val }}
+            {{- end }}
             {{- end }}
     - selector:
         apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
@@ -772,13 +774,15 @@ spec:
           template: |
             {{ $first := true }}
             {{- range $key, $val := (index .TKR_DATA .builtin.machineDeployment.version).labels }}
+            {{- if regexMatch "^(?:[a-zA-z])(?:[-\\w\\.]*[a-zA-z])$" $val }}
             {{- if $first }}
               {{- $first = false }}
             {{- else -}}
               ,
             {{- end }}
             {{- $key -}} = {{- $val }}
-            {{- end}}
+            {{- end }}
+            {{- end }}
             {{- if .nodePoolLabels -}}
               ,
               {{- $first := true }}
