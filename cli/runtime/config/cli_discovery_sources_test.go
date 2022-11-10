@@ -38,7 +38,6 @@ func TestGetCLIDiscoverySources(t *testing.T) {
 									Bucket:       "updated-test-bucket",
 									ManifestPath: "test-manifest-path",
 								},
-								ContextType: configapi.CtxTypeTMC,
 							},
 						},
 					},
@@ -51,7 +50,6 @@ func TestGetCLIDiscoverySources(t *testing.T) {
 						Bucket:       "updated-test-bucket",
 						ManifestPath: "test-manifest-path",
 					},
-					ContextType: configapi.CtxTypeTMC,
 				},
 			},
 		},
@@ -97,7 +95,6 @@ func TestGetCLIDiscoverySource(t *testing.T) {
 									Bucket:       "updated-test-bucket",
 									ManifestPath: "test-manifest-path",
 								},
-								ContextType: configapi.CtxTypeTMC,
 							},
 						},
 					},
@@ -109,7 +106,6 @@ func TestGetCLIDiscoverySource(t *testing.T) {
 					Bucket:       "updated-test-bucket",
 					ManifestPath: "test-manifest-path",
 				},
-				ContextType: configapi.CtxTypeTMC,
 			},
 		},
 	}
@@ -155,7 +151,6 @@ func TestSetCLIDiscoverySource(t *testing.T) {
 					Bucket:       "test-bucket",
 					ManifestPath: "test-manifest-path",
 				},
-				ContextType: configapi.CtxTypeTMC,
 			},
 		},
 		{
@@ -170,7 +165,6 @@ func TestSetCLIDiscoverySource(t *testing.T) {
 									Bucket:       "test-bucket",
 									ManifestPath: "test-manifest-path",
 								},
-								ContextType: configapi.CtxTypeTMC,
 							},
 						},
 					},
@@ -182,7 +176,6 @@ func TestSetCLIDiscoverySource(t *testing.T) {
 					Bucket:       "updated-test-bucket",
 					ManifestPath: "test-manifest-path",
 				},
-				ContextType: configapi.CtxTypeTMC,
 			},
 		},
 		{
@@ -197,7 +190,6 @@ func TestSetCLIDiscoverySource(t *testing.T) {
 									Bucket:       "test-bucket",
 									ManifestPath: "test-manifest-path",
 								},
-								ContextType: configapi.CtxTypeTMC,
 							},
 						},
 					},
@@ -209,7 +201,6 @@ func TestSetCLIDiscoverySource(t *testing.T) {
 					Bucket:       "test-bucket",
 					ManifestPath: "test-manifest-path",
 				},
-				ContextType: configapi.CtxTypeTMC,
 			},
 		},
 	}
@@ -267,7 +258,6 @@ func TestDeleteCLIDiscoverySource(t *testing.T) {
 									Bucket:       "test-bucket",
 									ManifestPath: "test-manifest-path",
 								},
-								ContextType: configapi.CtxTypeTMC,
 							},
 						},
 					},
@@ -288,7 +278,6 @@ func TestDeleteCLIDiscoverySource(t *testing.T) {
 									Bucket:       "test-bucket",
 									ManifestPath: "test-manifest-path",
 								},
-								ContextType: configapi.CtxTypeTMC,
 							},
 							{
 								GCP: &configapi.GCPDiscovery{
@@ -296,7 +285,6 @@ func TestDeleteCLIDiscoverySource(t *testing.T) {
 									Bucket:       "test-bucket2",
 									ManifestPath: "test-manifest-path2",
 								},
-								ContextType: configapi.CtxTypeTMC,
 							},
 						},
 					},
@@ -317,7 +305,6 @@ func TestDeleteCLIDiscoverySource(t *testing.T) {
 									Bucket:       "test-bucket",
 									ManifestPath: "test-manifest-path",
 								},
-								ContextType: configapi.CtxTypeTMC,
 							},
 						},
 					},
@@ -370,7 +357,6 @@ func TestIntegrationSetGetDeleteCLIDiscoverySource(t *testing.T) {
 									Bucket:       "test-bucket",
 									ManifestPath: "test-manifest-path",
 								},
-								ContextType: configapi.CtxTypeTMC,
 							},
 						},
 					},
@@ -421,14 +407,12 @@ func TestSetCLIDiscoverySourceLocalMulti(t *testing.T) {
 			Name: "default-local",
 			Path: "standalone",
 		},
-		ContextType: "k8s",
 	}
 	updateInput2 := configapi.PluginDiscovery{
 		Local: &configapi.LocalDiscovery{
 			Name: "default-local",
 			Path: "standalone-updated",
 		},
-		ContextType: "k8s",
 	}
 	err := StoreClientConfig(src)
 	if err != nil {

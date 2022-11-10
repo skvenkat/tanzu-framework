@@ -21,10 +21,8 @@ func setupServersTestData() (string, string) {
           name: default
           image: "/:"
           unknown: cli-unknown
-        contextType: k8s
       - local:
           name: default-local
-        contextType: k8s
       - local:
           name: admin-local
           path: admin
@@ -48,7 +46,6 @@ contexts:
           manifestPath: test-manifest-path
           annotation: one
           required: true
-        contextType: tmc
 currentContext:
   k8s: test-mc
 servers:
@@ -67,7 +64,6 @@ servers:
           manifestPath: test-manifest-path
           annotation: one
           required: true
-        contextType: tmc
 current: test-mc
 `
 	expectedConfig := `clientOptions:
@@ -77,10 +73,8 @@ current: test-mc
                 name: default
                 image: "/:"
                 unknown: cli-unknown
-              contextType: k8s
             - local:
                 name: default-local
-              contextType: k8s
             - local:
                 name: admin-local
                 path: admin
@@ -104,7 +98,6 @@ contexts:
             manifestPath: test-manifest-path
             annotation: one
             required: true
-          contextType: tmc
     - name: test-mc2
       type: k8s
       clusterOpts:
@@ -116,7 +109,6 @@ contexts:
             name: test
             bucket: test-bucket-updated
             manifestPath: test-manifest-path
-          contextType: tmc
 currentContext:
     k8s: test-mc2
 servers:
@@ -135,7 +127,6 @@ servers:
             manifestPath: test-manifest-path
             annotation: one
             required: true
-          contextType: tmc
     - name: test-mc2
       type: k8s
       managementClusterOpts:
@@ -146,7 +137,6 @@ servers:
             name: test
             bucket: test-bucket-updated
             manifestPath: test-manifest-path
-          contextType: tmc
 current: test-mc2
 `
 	return tanzuConfigBytes, expectedConfig
@@ -179,7 +169,6 @@ func TestServersIntegration(t *testing.T) {
 					Bucket:       "test-bucket",
 					ManifestPath: "test-manifest-path",
 				},
-				ContextType: configapi.CtxTypeTMC,
 			},
 		},
 	}
@@ -200,7 +189,6 @@ func TestServersIntegration(t *testing.T) {
 					Bucket:       "test-bucket",
 					ManifestPath: "test-manifest-path",
 				},
-				ContextType: configapi.CtxTypeTMC,
 			},
 		},
 	}
@@ -224,7 +212,6 @@ func TestServersIntegration(t *testing.T) {
 					Bucket:       "test-bucket-updated",
 					ManifestPath: "test-manifest-path",
 				},
-				ContextType: configapi.CtxTypeTMC,
 			},
 		},
 	}
