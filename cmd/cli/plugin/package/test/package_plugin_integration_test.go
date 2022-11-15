@@ -95,6 +95,8 @@ type packageAvailableOutput struct {
 var (
 	config                         = &PackagePluginConfig{}
 	configPath                     string
+	configValuesYaml               = configValuesYaml
+	configValuesUpdateYaml         = configValuesUpdateYaml
 	tkgCfgDir                      string
 	err                            error
 	packagePlugin                  packagelib.PackagePlugin
@@ -749,7 +751,7 @@ func testHelper() {
 	pkgOptions.PollTimeout = pollTimeout
 	pkgOptions.Version = config.PackageVersion
 	if config.WithValueFile {
-		pkgOptions.ValuesFile = "config/values.yaml"
+		pkgOptions.ValuesFile = configValuesYaml
 	}
 	result = packagePlugin.CreateInstalledPackage(&pkgOptions)
 	Expect(result.Error).ToNot(HaveOccurred())
@@ -766,7 +768,7 @@ func testHelper() {
 	By("update package install")
 	pkgOptions.Version = config.PackageVersionUpdate
 	if config.WithValueFile {
-		pkgOptions.ValuesFile = "config/values_update.yaml"
+		pkgOptions.ValuesFile = configValuesUpdateYaml
 	}
 	result = packagePlugin.UpdateInstalledPackage(&pkgOptions)
 	Expect(result.Error).ToNot(HaveOccurred())
@@ -928,7 +930,7 @@ func testHelperKctrlDisabled() {
 	pkgOptions.PollTimeout = pollTimeout
 	pkgOptions.Version = config.PackageVersion
 	if config.WithValueFile {
-		pkgOptions.ValuesFile = "config/values.yaml"
+		pkgOptions.ValuesFile = configValuesYaml
 	}
 	result = packagePlugin.CreateInstalledPackage(&pkgOptions)
 	Expect(result.Error).ToNot(HaveOccurred())
@@ -945,7 +947,7 @@ func testHelperKctrlDisabled() {
 	By("update package install")
 	pkgOptions.Version = config.PackageVersionUpdate
 	if config.WithValueFile {
-		pkgOptions.ValuesFile = "config/values_update.yaml"
+		pkgOptions.ValuesFile = configValuesUpdateYaml
 	}
 	result = packagePlugin.UpdateInstalledPackage(&pkgOptions)
 	Expect(result.Error).ToNot(HaveOccurred())
