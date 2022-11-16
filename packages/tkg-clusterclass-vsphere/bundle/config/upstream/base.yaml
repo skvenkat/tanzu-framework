@@ -108,14 +108,14 @@ spec:
             kubeletExtraArgs:
               cloud-provider: external
               tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
-            name: '{{ ds.meta_data.hostname }}'
+            name: '{{ local_hostname }}'
         joinConfiguration:
           nodeRegistration:
             criSocket: /var/run/containerd/containerd.sock
             kubeletExtraArgs:
               cloud-provider: external
               tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
-            name: '{{ ds.meta_data.hostname }}'
+            name: '{{ local_hostname }}'
         preKubeadmCommands:
         - hostname "{{ ds.meta_data.hostname }}"
         - echo "::1         ipv6-localhost ipv6-loopback" >/etc/hosts
