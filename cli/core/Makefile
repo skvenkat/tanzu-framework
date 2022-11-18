@@ -220,6 +220,11 @@ fmt: $(GOIMPORTS) ## Run goimports
 generate-fakes: ## Generate fakes for writing unit tests
 	$(GO) generate ./...
 	$(MAKE) fmt
+
+.PHONY: test-e2e
+test-e2e: fmt vet ## Run CLI Core E2E Tests
+	${GO} test ./test/e2e/... -timeout 60m -race -coverprofile coverage.txt -v
+
 ## --------------------------------------
 ## Tooling Binaries
 ## --------------------------------------
