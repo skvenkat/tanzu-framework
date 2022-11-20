@@ -7,20 +7,78 @@ package config
 import (
 	"os"
 
+	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
+	"github.com/vmware-tanzu/tanzu-framework/cli/runtime/config/nodeutils"
 	"gopkg.in/yaml.v3"
 )
 
-type CfgOptions struct {
-	CfgPath string // file path to the config file
-}
-
-type CfgOpts func(config *CfgOptions)
-
-func WithCfgPath(path string) CfgOpts {
-	return func(config *CfgOptions) {
-		config.CfgPath = path
+func persistConfig(node *yaml.Node) error {
+	migrate, err := ShouldMigrateToNewConfig()
+	if err != nil {
+		migrate = false
 	}
+
+	if migrate {
+		return persistClientConfigV2(node)
+	}
+
+	cfgNode, err := getClientConfigNodeNoLock()
+	if err != nil {
+		return err
+	}
+
+	// copy of change node to persist
+	var cfgNodeToPersist yaml.Node
+	err = copier.CopyWithOption(&cfgNodeToPersist, node, copier.Option{
+		DeepCopy: true,
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to clone")
+	}
+
+	cfgV2Node, err := getClientConfigV2NodeNoLock()
+	if err != nil {
+		return err
+	}
+
+	migratedItems, err := GetMigratedCfgItems()
+	if err != nil {
+		return err
+	}
+
+	for _, migratedItem := range migratedItems {
+		// Find the migrated node from the updated node
+		itemNode := nodeutils.FindNode(cfgNodeToPersist.Content[0], nodeutils.WithForceCreate(), nodeutils.WithKeys([]nodeutils.Key{
+			{Name: migratedItem.Value, Type: migratedItem.Type},
+		}))
+
+		// Find the migrated node from config.yaml
+		itemCfgNode := nodeutils.FindNode(cfgNode.Content[0], nodeutils.WithForceCreate(), nodeutils.WithKeys([]nodeutils.Key{
+			{Name: migratedItem.Value, Type: migratedItem.Type},
+		}))
+
+		// Find the migrated node from config-v2.yaml
+		itemV2Node := nodeutils.FindNode(cfgV2Node.Content[0], nodeutils.WithForceCreate(), nodeutils.WithKeys([]nodeutils.Key{
+			{Name: migratedItem.Value, Type: migratedItem.Type},
+		}))
+
+		*itemV2Node = *itemNode
+
+		// Reset migrated node in config.yaml
+		*itemNode = *itemCfgNode
+	}
+
+	err = persistClientConfig(&cfgNodeToPersist)
+	if err != nil {
+		return err
+	}
+
+	err = persistClientConfigV2(cfgV2Node)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // persistNode stores/writes the yaml node to config.yaml
@@ -52,4 +110,67 @@ func persistNode(node *yaml.Node, opts ...CfgOpts) error {
 	}
 	storeConfigToLegacyDir(data)
 	return nil
+}
+
+func getClientConfig() (*yaml.Node, error) {
+	migrate, err := ShouldMigrateToNewConfig()
+	if err != nil {
+		migrate = false
+	}
+
+	if migrate {
+		return getClientConfigV2Node()
+	}
+	return getMultiConfig()
+}
+
+// Use for CREATE/Update/Delete apis
+// getClientConfig retrieve config data from config.yaml, config-alt.yaml based on feature flag with no file lock
+func getClientConfigNoLock() (*yaml.Node, error) {
+	// Check config migration feature flag
+	migrate, err := ShouldMigrateToNewConfig()
+	if err != nil {
+		migrate = false
+	}
+
+	if migrate {
+		return getClientConfigNodeNoLock()
+	}
+	return getMultiConfigNoLock()
+}
+
+// getMultiConfig retrieves combined config.yaml and config.alt.yaml
+func getMultiConfig() (*yaml.Node, error) {
+	node1, err := getClientConfigNode()
+	if err != nil {
+		return node1, err
+	}
+	node2, err := getClientConfigV2Node()
+	if err != nil {
+		return node2, err
+	}
+	// Merge node1 and node2
+	err = nodeutils.ConcatNodes(node1, node2)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to merge node1 and node2")
+	}
+	return node2, err
+}
+
+// getMultiConfigNoLock retrieves combined config.yaml and config.alt.yaml
+func getMultiConfigNoLock() (*yaml.Node, error) {
+	cfgNode, err := getClientConfigNodeNoLock()
+	if err != nil {
+		return cfgNode, err
+	}
+	cfgV2Node, err := getClientConfigV2NodeNoLock()
+	if err != nil {
+		return cfgV2Node, err
+	}
+	// Merge node1 and node2
+	err = nodeutils.ConcatNodes(cfgNode, cfgV2Node)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to merge node1 and node2")
+	}
+	return cfgV2Node, err
 }

@@ -5,6 +5,8 @@ package config
 
 // Keys used to parse the yaml node to retrieve specific stanza of the config file
 const (
-	KeyConfigMetadata = "configMetadata"
-	KeyPatchStrategy  = "patchStrategy"
+	KeyConfigMetadata   = "configMetadata"
+	KeyPatchStrategy    = "patchStrategy"
+	KeyFeatureFlags     = "featureFlags"
+	KeyMigratedCfgItems = "migratedCfgItems"
 )

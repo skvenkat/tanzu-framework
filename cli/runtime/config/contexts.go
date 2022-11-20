@@ -15,7 +15,7 @@ import (
 // GetContext retrieves the context by name
 func GetContext(name string) (*configapi.Context, error) {
 	// Retrieve client config node
-	node, err := getClientConfigNode()
+	node, err := getClientConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -31,13 +31,25 @@ func AddContext(c *configapi.Context, setCurrent bool) error {
 //
 //nolint:gocyclo
 func SetContext(c *configapi.Context, setCurrent bool) error {
-	// Retrieve client config node
-	AcquireTanzuConfigLock()
-	defer ReleaseTanzuConfigLock()
-	node, err := getClientConfigNodeNoLock()
+	// Acquire file lock for config.yaml and config-v2.yaml based on feature flag
+	migrate, err := ShouldMigrateToNewConfig()
+	if err != nil {
+		migrate = false
+	}
+	if migrate {
+		AcquireTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigV2Lock()
+	} else {
+		AcquireTanzuConfigV2Lock()
+		AcquireTanzuConfigLock()
+		defer ReleaseTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigLock()
+	}
+	node, err := getClientConfigNoLock()
 	if err != nil {
 		return err
 	}
+
 	// Add or update the context
 	persist, err := setContext(node, c)
 	if err != nil {
@@ -101,10 +113,21 @@ func DeleteContext(name string) error {
 
 // RemoveContext delete a context by name
 func RemoveContext(name string) error {
-	// Retrieve client config node
-	AcquireTanzuConfigLock()
-	defer ReleaseTanzuConfigLock()
-	node, err := getClientConfigNodeNoLock()
+	// Acquire file lock for config.yaml and config-v2.yaml based on feature flag
+	migrate, err := ShouldMigrateToNewConfig()
+	if err != nil {
+		migrate = false
+	}
+	if migrate {
+		AcquireTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigV2Lock()
+	} else {
+		AcquireTanzuConfigV2Lock()
+		AcquireTanzuConfigLock()
+		defer ReleaseTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigLock()
+	}
+	node, err := getClientConfigNoLock()
 	if err != nil {
 		return err
 	}
@@ -140,7 +163,7 @@ func ContextExists(name string) (bool, error) {
 // GetCurrentContext retrieves the current context for the specified context type
 func GetCurrentContext(ctxType configapi.ContextType) (c *configapi.Context, err error) {
 	// Retrieve client config node
-	node, err := getClientConfigNode()
+	node, err := getClientConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -149,10 +172,21 @@ func GetCurrentContext(ctxType configapi.ContextType) (c *configapi.Context, err
 
 // SetCurrentContext sets the current context to the specified name if context is present
 func SetCurrentContext(name string) error {
-	// Retrieve client config node
-	AcquireTanzuConfigLock()
-	defer ReleaseTanzuConfigLock()
-	node, err := getClientConfigNodeNoLock()
+	// Acquire file lock for config.yaml and config-v2.yaml based on feature flag
+	migrate, err := ShouldMigrateToNewConfig()
+	if err != nil {
+		migrate = false
+	}
+	if migrate {
+		AcquireTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigV2Lock()
+	} else {
+		AcquireTanzuConfigV2Lock()
+		AcquireTanzuConfigLock()
+		defer ReleaseTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigLock()
+	}
+	node, err := getClientConfigNoLock()
 	if err != nil {
 		return err
 	}
@@ -186,23 +220,35 @@ func SetCurrentContext(name string) error {
 
 // RemoveCurrentContext removed the current context of specified context type
 func RemoveCurrentContext(ctxType configapi.ContextType) error {
-	// Retrieve client config node
-	AcquireTanzuConfigLock()
-	defer ReleaseTanzuConfigLock()
-	node, err := getClientConfigNodeNoLock()
+	// Acquire file lock for config.yaml and config-v2.yaml based on feature flag
+	migrate, err := ShouldMigrateToNewConfig()
+	if err != nil {
+		migrate = false
+	}
+	if migrate {
+		AcquireTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigV2Lock()
+	} else {
+		AcquireTanzuConfigV2Lock()
+		AcquireTanzuConfigLock()
+		defer ReleaseTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigLock()
+	}
+	node, err := getClientConfigNoLock()
 	if err != nil {
 		return err
 	}
 
-	ctx := &configapi.Context{Type: ctxType}
-	err = removeCurrentContext(node, ctx)
-	if err != nil {
-		return err
-	}
 	c, err := getCurrentContext(node, ctxType)
 	if err != nil {
 		return err
 	}
+
+	err = removeCurrentContext(node, &configapi.Context{Type: ctxType})
+	if err != nil {
+		return err
+	}
+
 	err = removeCurrentServer(node, c.Name)
 	if err != nil {
 		return err
@@ -353,19 +399,25 @@ func removeCurrentContext(node *yaml.Node, ctx *configapi.Context) error {
 	// Find current context node in the yaml node
 	keys := []nodeutils.Key{
 		{Name: KeyCurrentContext},
-		{Name: string(ctx.Type)},
 	}
+
 	currentContextNode := nodeutils.FindNode(node.Content[0], nodeutils.WithKeys(keys))
 	if currentContextNode == nil {
 		return nil
 	}
-	if currentContextNode.Value == ctx.Name || ctx.Name == "" {
-		currentContextNode.Value = ""
-		currentContextNode.Style = 0
+	ctxTypeNodeIndex := nodeutils.GetNodeIndex(currentContextNode.Content, string(ctx.Type))
+	if ctxTypeNodeIndex == -1 {
+		return nil
+	}
+	if currentContextNode.Content[ctxTypeNodeIndex].Value == ctx.Name || ctx.Name == "" {
+		ctxTypeNodeIndex--
+		currentContextNode.Content = append(currentContextNode.Content[:ctxTypeNodeIndex], currentContextNode.Content[ctxTypeNodeIndex+1:]...)
+		currentContextNode.Content = append(currentContextNode.Content[:ctxTypeNodeIndex], currentContextNode.Content[ctxTypeNodeIndex+1:]...)
 	}
 	return nil
 }
 
+//nolint:dupl
 func removeContext(node *yaml.Node, name string) error {
 	// Find the contexts node in the yaml node
 	keys := []nodeutils.Key{

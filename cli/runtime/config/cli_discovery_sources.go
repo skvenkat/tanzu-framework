@@ -16,7 +16,7 @@ import (
 // GetCLIDiscoverySources retrieves cli discovery sources
 func GetCLIDiscoverySources() ([]configapi.PluginDiscovery, error) {
 	// Retrieve client config node
-	node, err := getClientConfigNode()
+	node, err := getClientConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +27,7 @@ func GetCLIDiscoverySources() ([]configapi.PluginDiscovery, error) {
 // GetCLIDiscoverySource retrieves cli discovery source by name
 func GetCLIDiscoverySource(name string) (*configapi.PluginDiscovery, error) {
 	// Retrieve client config node
-	node, err := getClientConfigNode()
+	node, err := getClientConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -64,10 +64,21 @@ func SetCLIDiscoverySources(discoverySources []configapi.PluginDiscovery) (err e
 
 // SetCLIDiscoverySource add or update a cli discoverySource
 func SetCLIDiscoverySource(discoverySource configapi.PluginDiscovery) (err error) {
-	// Retrieve client config node
-	AcquireTanzuConfigLock()
-	defer ReleaseTanzuConfigLock()
-	node, err := getClientConfigNodeNoLock()
+	// Acquire file lock for config.yaml and config-v2.yaml based on feature flag
+	migrate, err := ShouldMigrateToNewConfig()
+	if err != nil {
+		migrate = false
+	}
+	if migrate {
+		AcquireTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigV2Lock()
+	} else {
+		AcquireTanzuConfigV2Lock()
+		AcquireTanzuConfigLock()
+		defer ReleaseTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigLock()
+	}
+	node, err := getClientConfigNoLock()
 	if err != nil {
 		return err
 	}
@@ -88,10 +99,21 @@ func SetCLIDiscoverySource(discoverySource configapi.PluginDiscovery) (err error
 
 // DeleteCLIDiscoverySource delete cli discoverySource by name
 func DeleteCLIDiscoverySource(name string) error {
-	// Retrieve client config node
-	AcquireTanzuConfigLock()
-	defer ReleaseTanzuConfigLock()
-	node, err := getClientConfigNodeNoLock()
+	// Acquire file lock for config.yaml and config-v2.yaml based on feature flag
+	migrate, err := ShouldMigrateToNewConfig()
+	if err != nil {
+		migrate = false
+	}
+	if migrate {
+		AcquireTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigV2Lock()
+	} else {
+		AcquireTanzuConfigV2Lock()
+		AcquireTanzuConfigLock()
+		defer ReleaseTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigLock()
+	}
+	node, err := getClientConfigNoLock()
 	if err != nil {
 		return err
 	}

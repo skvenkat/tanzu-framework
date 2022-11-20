@@ -59,7 +59,8 @@ func newClientConfigNode() (*yaml.Node, error) {
 	return node, nil
 }
 
-func persistConfig(node *yaml.Node) error {
+// persistClientConfig write to config.yaml
+func persistClientConfig(node *yaml.Node) error {
 	path, err := ClientConfigPath()
 	if err != nil {
 		return errors.Wrap(err, "could not find config path")

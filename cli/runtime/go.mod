@@ -13,6 +13,7 @@ require (
 	github.com/briandowns/spinner v1.19.0
 	github.com/google/go-cmp v0.5.8
 	github.com/google/uuid v1.3.0
+	github.com/jinzhu/copier v0.3.5
 	github.com/juju/fslock v0.0.0-20160525022230-4d5c94c67b4b
 	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/mattn/go-isatty v0.0.16

@@ -12,8 +12,8 @@ import (
 	configapi "github.com/vmware-tanzu/tanzu-framework/cli/runtime/apis/config/v1alpha1"
 )
 
-func setupServersTestData() (string, string) {
-	tanzuConfigBytes := `clientOptions:
+func setupServersTestData() (string, string, string, string) {
+	cfg := `clientOptions:
   cli:
     discoverySources:
       - oci:
@@ -27,7 +27,73 @@ func setupServersTestData() (string, string) {
       - local:
           name: admin-local
           path: admin
-contexts:
+servers:
+  - name: test-mc
+    type: managementcluster
+    managementClusterOpts:
+      endpoint: test-endpoint
+      path: test-path
+      context: test-context
+      annotation: one
+      required: true
+    discoverySources:
+      - gcp:
+          name: test
+          bucket: test-bucket
+          manifestPath: test-manifest-path
+          annotation: one
+          required: true
+        contextType: tmc
+current: test-mc
+`
+	expectedCfg := `contexts: []
+currentContext: {}
+clientOptions:
+    cli:
+        discoverySources:
+            - oci:
+                name: default
+                image: "/:"
+                unknown: cli-unknown
+              contextType: k8s
+            - local:
+                name: default-local
+              contextType: k8s
+            - local:
+                name: admin-local
+                path: admin
+servers:
+    - name: test-mc
+      type: managementcluster
+      managementClusterOpts:
+        endpoint: test-endpoint
+        path: test-path
+        context: test-context
+        annotation: one
+        required: true
+      discoverySources:
+        - gcp:
+            name: test
+            bucket: test-bucket
+            manifestPath: test-manifest-path
+            annotation: one
+            required: true
+          contextType: tmc
+    - name: test-mc2
+      type: k8s
+      managementClusterOpts:
+        endpoint: test-endpoint-updated
+        path: test-path
+      discoverySources:
+        - gcp:
+            name: test
+            bucket: test-bucket-updated
+            manifestPath: test-manifest-path
+          contextType: tmc
+current: test-mc2
+`
+
+	cfg2 := `contexts:
   - name: test-mc
     type: k8s
     group: one
@@ -50,40 +116,8 @@ contexts:
         contextType: tmc
 currentContext:
   k8s: test-mc
-servers:
-  - name: test-mc
-    type: managementcluster
-    managementClusterOpts:
-      endpoint: test-endpoint
-      path: test-path
-      context: test-context
-      annotation: one
-      required: true
-    discoverySources:
-      - gcp:
-          name: test
-          bucket: test-bucket
-          manifestPath: test-manifest-path
-          annotation: one
-          required: true
-        contextType: tmc
-current: test-mc
 `
-	expectedConfig := `clientOptions:
-    cli:
-        discoverySources:
-            - oci:
-                name: default
-                image: "/:"
-                unknown: cli-unknown
-              contextType: k8s
-            - local:
-                name: default-local
-              contextType: k8s
-            - local:
-                name: admin-local
-                path: admin
-contexts:
+	expectedCfg2 := `contexts:
     - name: test-mc
       type: k8s
       group: one
@@ -118,51 +152,56 @@ contexts:
           contextType: tmc
 currentContext:
     k8s: test-mc2
-servers:
-    - name: test-mc
-      type: managementcluster
-      managementClusterOpts:
-        endpoint: test-endpoint
-        path: test-path
-        context: test-context
-        annotation: one
-        required: true
-      discoverySources:
-        - gcp:
-            name: test
-            bucket: test-bucket
-            manifestPath: test-manifest-path
-            annotation: one
-            required: true
-          contextType: tmc
-    - name: test-mc2
-      type: k8s
-      managementClusterOpts:
-        endpoint: test-endpoint-updated
-        path: test-path
-      discoverySources:
-        - gcp:
-            name: test
-            bucket: test-bucket-updated
-            manifestPath: test-manifest-path
-          contextType: tmc
-current: test-mc2
 `
-	return tanzuConfigBytes, expectedConfig
+
+	return cfg, expectedCfg, cfg2, expectedCfg2
 }
+
 func TestServersIntegration(t *testing.T) {
-	//Setup data and test config file
-	tanzuConfigBytes, expectedConfig := setupServersTestData()
-	f, err := os.CreateTemp("", "tanzu_config")
+	// Setup config data
+	cfg, expectedCfg, cfg2, expectedCfg2 := setupServersTestData()
+
+	f1, err := os.CreateTemp("", "tanzu_config")
 	assert.Nil(t, err)
-	err = os.WriteFile(f.Name(), []byte(tanzuConfigBytes), 0644)
+	err = os.WriteFile(f1.Name(), []byte(cfg), 0644)
 	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigKey, f1.Name())
+	assert.NoError(t, err)
+
+	f2, err := os.CreateTemp("", "tanzu_config_v2")
+	assert.Nil(t, err)
+	err = os.WriteFile(f2.Name(), []byte(cfg2), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigV2Key, f2.Name())
+	assert.NoError(t, err)
+
+	//Setup metadata
+	fMeta, err := os.CreateTemp("", "tanzu_config_metadata")
+	assert.Nil(t, err)
+	err = os.WriteFile(fMeta.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigMetadataKey, fMeta.Name())
+	assert.NoError(t, err)
+
+	// Cleanup
 	defer func(name string) {
 		err = os.Remove(name)
 		assert.NoError(t, err)
-	}(f.Name())
-	err = os.Setenv("TANZU_CONFIG", f.Name())
-	assert.NoError(t, err)
+	}(f1.Name())
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(f2.Name())
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(fMeta.Name())
+
 	// Get Server
 	server, err := GetServer("test-mc")
 	expected := &configapi.Server{
@@ -234,9 +273,15 @@ func TestServersIntegration(t *testing.T) {
 	s, err = GetServer("test-mc2")
 	assert.Nil(t, err)
 	assert.Equal(t, updatedServer, s)
-	file, err := os.ReadFile(f.Name())
+
+	file, err := os.ReadFile(f1.Name())
 	assert.NoError(t, err)
-	assert.Equal(t, []byte(expectedConfig), file)
+	assert.Equal(t, expectedCfg, string(file))
+
+	file, err = os.ReadFile(f2.Name())
+	assert.NoError(t, err)
+	assert.Equal(t, expectedCfg2, string(file))
+
 	// Delete server
 	err = DeleteServer("test-mc2")
 	assert.NoError(t, err)

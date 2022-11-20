@@ -13,13 +13,48 @@ import (
 )
 
 func TestGetCLIDiscoverySources(t *testing.T) {
-	// setup
-	func() {
-		LocalDirName = TestLocalDirName
-	}()
-	defer func() {
-		cleanupDir(LocalDirName)
-	}()
+	// Setup config data
+	f1, err := os.CreateTemp("", "tanzu_config")
+	assert.Nil(t, err)
+	err = os.WriteFile(f1.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigKey, f1.Name())
+	assert.NoError(t, err)
+
+	f2, err := os.CreateTemp("", "tanzu_config_v2")
+	assert.Nil(t, err)
+	err = os.WriteFile(f2.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigV2Key, f2.Name())
+	assert.NoError(t, err)
+
+	//Setup metadata
+	fMeta, err := os.CreateTemp("", "tanzu_config_metadata")
+	assert.Nil(t, err)
+	err = os.WriteFile(fMeta.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigMetadataKey, fMeta.Name())
+	assert.NoError(t, err)
+
+	// Cleanup
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(f1.Name())
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(f2.Name())
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(fMeta.Name())
+
 	tests := []struct {
 		name   string
 		in     *configapi.ClientConfig
@@ -68,13 +103,48 @@ func TestGetCLIDiscoverySources(t *testing.T) {
 }
 
 func TestGetCLIDiscoverySource(t *testing.T) {
-	// setup
-	func() {
-		LocalDirName = TestLocalDirName
-	}()
-	defer func() {
-		cleanupDir(LocalDirName)
-	}()
+	// Setup config data
+	f1, err := os.CreateTemp("", "tanzu_config")
+	assert.Nil(t, err)
+	err = os.WriteFile(f1.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigKey, f1.Name())
+	assert.NoError(t, err)
+
+	f2, err := os.CreateTemp("", "tanzu_config_v2")
+	assert.Nil(t, err)
+	err = os.WriteFile(f2.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigV2Key, f2.Name())
+	assert.NoError(t, err)
+
+	//Setup metadata
+	fMeta, err := os.CreateTemp("", "tanzu_config_metadata")
+	assert.Nil(t, err)
+	err = os.WriteFile(fMeta.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigMetadataKey, fMeta.Name())
+	assert.NoError(t, err)
+
+	// Cleanup
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(f1.Name())
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(f2.Name())
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(fMeta.Name())
+
 	tests := []struct {
 		name string
 		in   *configapi.ClientConfig
@@ -121,33 +191,46 @@ func TestGetCLIDiscoverySource(t *testing.T) {
 
 func TestSetCLIDiscoverySources(t *testing.T) {
 	// Setup config data
-	f, err := os.CreateTemp("", "tanzu_config")
+	f1, err := os.CreateTemp("", "tanzu_config")
 	assert.Nil(t, err)
-	err = os.WriteFile(f.Name(), []byte(""), 0644)
+	err = os.WriteFile(f1.Name(), []byte(""), 0644)
 	assert.Nil(t, err)
 
-	err = os.Setenv("TANZU_CONFIG", f.Name())
+	err = os.Setenv(EnvConfigKey, f1.Name())
 	assert.NoError(t, err)
 
-	//Setup metadata
-	f2, err := os.CreateTemp("", "tanzu_config_metadata")
+	f2, err := os.CreateTemp("", "tanzu_config_v2")
 	assert.Nil(t, err)
 	err = os.WriteFile(f2.Name(), []byte(""), 0644)
 	assert.Nil(t, err)
 
-	err = os.Setenv(EnvConfigMetadataKey, f2.Name())
+	err = os.Setenv(EnvConfigV2Key, f2.Name())
+	assert.NoError(t, err)
+
+	//Setup metadata
+	fMeta, err := os.CreateTemp("", "tanzu_config_metadata")
+	assert.Nil(t, err)
+	err = os.WriteFile(fMeta.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigMetadataKey, fMeta.Name())
 	assert.NoError(t, err)
 
 	// Cleanup
 	defer func(name string) {
 		err = os.Remove(name)
 		assert.NoError(t, err)
-	}(f.Name())
+	}(f1.Name())
 
 	defer func(name string) {
 		err = os.Remove(name)
 		assert.NoError(t, err)
 	}(f2.Name())
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(fMeta.Name())
 
 	tests := []struct {
 		name  string
@@ -248,20 +331,49 @@ func TestSetCLIDiscoverySources(t *testing.T) {
 		})
 	}
 }
+
 func TestDeleteCLIDiscoverySource(t *testing.T) {
 	// Setup config data
-	f, err := os.CreateTemp("", "tanzu_config")
+	f1, err := os.CreateTemp("", "tanzu_config")
 	assert.Nil(t, err)
-	err = os.WriteFile(f.Name(), []byte(""), 0644)
+	err = os.WriteFile(f1.Name(), []byte(""), 0644)
 	assert.Nil(t, err)
-	err = os.Setenv("TANZU_CONFIG", f.Name())
+
+	err = os.Setenv(EnvConfigKey, f1.Name())
+	assert.NoError(t, err)
+
+	f2, err := os.CreateTemp("", "tanzu_config_v2")
+	assert.Nil(t, err)
+	err = os.WriteFile(f2.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigV2Key, f2.Name())
+	assert.NoError(t, err)
+
+	//Setup metadata
+	fMeta, err := os.CreateTemp("", "tanzu_config_metadata")
+	assert.Nil(t, err)
+	err = os.WriteFile(fMeta.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigMetadataKey, fMeta.Name())
 	assert.NoError(t, err)
 
 	// Cleanup
 	defer func(name string) {
 		err = os.Remove(name)
 		assert.NoError(t, err)
-	}(f.Name())
+	}(f1.Name())
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(f2.Name())
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(fMeta.Name())
 
 	tests := []struct {
 		name    string
@@ -359,33 +471,46 @@ func TestDeleteCLIDiscoverySource(t *testing.T) {
 
 func TestIntegrationSetGetDeleteCLIDiscoverySource(t *testing.T) {
 	// Setup config data
-	f, err := os.CreateTemp("", "tanzu_config")
+	f1, err := os.CreateTemp("", "tanzu_config")
 	assert.Nil(t, err)
-	err = os.WriteFile(f.Name(), []byte(""), 0644)
+	err = os.WriteFile(f1.Name(), []byte(""), 0644)
 	assert.Nil(t, err)
 
-	err = os.Setenv("TANZU_CONFIG", f.Name())
+	err = os.Setenv(EnvConfigKey, f1.Name())
 	assert.NoError(t, err)
 
-	//Setup metadata
-	f2, err := os.CreateTemp("", "tanzu_config_metadata")
+	f2, err := os.CreateTemp("", "tanzu_config_v2")
 	assert.Nil(t, err)
 	err = os.WriteFile(f2.Name(), []byte(""), 0644)
 	assert.Nil(t, err)
 
-	err = os.Setenv(EnvConfigMetadataKey, f2.Name())
+	err = os.Setenv(EnvConfigV2Key, f2.Name())
+	assert.NoError(t, err)
+
+	//Setup metadata
+	fMeta, err := os.CreateTemp("", "tanzu_config_metadata")
+	assert.Nil(t, err)
+	err = os.WriteFile(fMeta.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigMetadataKey, fMeta.Name())
 	assert.NoError(t, err)
 
 	// Cleanup
 	defer func(name string) {
 		err = os.Remove(name)
 		assert.NoError(t, err)
-	}(f.Name())
+	}(f1.Name())
 
 	defer func(name string) {
 		err = os.Remove(name)
 		assert.NoError(t, err)
 	}(f2.Name())
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(fMeta.Name())
 
 	sources := []configapi.PluginDiscovery{
 		{
@@ -433,33 +558,46 @@ func TestIntegrationSetGetDeleteCLIDiscoverySource(t *testing.T) {
 
 func TestSetCLIDiscoverySourceLocalMulti(t *testing.T) {
 	// Setup config data
-	f, err := os.CreateTemp("", "tanzu_config")
+	f1, err := os.CreateTemp("", "tanzu_config")
 	assert.Nil(t, err)
-	err = os.WriteFile(f.Name(), []byte(""), 0644)
+	err = os.WriteFile(f1.Name(), []byte(""), 0644)
 	assert.Nil(t, err)
 
-	err = os.Setenv("TANZU_CONFIG", f.Name())
+	err = os.Setenv(EnvConfigKey, f1.Name())
 	assert.NoError(t, err)
 
-	//Setup metadata
-	f2, err := os.CreateTemp("", "tanzu_config_metadata")
+	f2, err := os.CreateTemp("", "tanzu_config_v2")
 	assert.Nil(t, err)
 	err = os.WriteFile(f2.Name(), []byte(""), 0644)
 	assert.Nil(t, err)
 
-	err = os.Setenv(EnvConfigMetadataKey, f2.Name())
+	err = os.Setenv(EnvConfigV2Key, f2.Name())
+	assert.NoError(t, err)
+
+	//Setup metadata
+	fMeta, err := os.CreateTemp("", "tanzu_config_metadata")
+	assert.Nil(t, err)
+	err = os.WriteFile(fMeta.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigMetadataKey, fMeta.Name())
 	assert.NoError(t, err)
 
 	// Cleanup
 	defer func(name string) {
 		err = os.Remove(name)
 		assert.NoError(t, err)
-	}(f.Name())
+	}(f1.Name())
 
 	defer func(name string) {
 		err = os.Remove(name)
 		assert.NoError(t, err)
 	}(f2.Name())
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(fMeta.Name())
 
 	src := &configapi.ClientConfig{
 		ClientOptions: &configapi.ClientOptions{
@@ -510,28 +648,46 @@ func TestSetCLIDiscoverySourceLocalMulti(t *testing.T) {
 
 func TestSetCLIDiscoverySourceWithDefaultAndDefaultLocal(t *testing.T) {
 	// Setup config data
-	f, err := os.CreateTemp("", "tanzu_config")
+	f1, err := os.CreateTemp("", "tanzu_config")
 	assert.Nil(t, err)
-	err = os.WriteFile(f.Name(), []byte(""), 0644)
+	err = os.WriteFile(f1.Name(), []byte(""), 0644)
 	assert.Nil(t, err)
-	defer func(name string) {
-		err = os.Remove(name)
-		assert.NoError(t, err)
-	}(f.Name())
-	err = os.Setenv("TANZU_CONFIG", f.Name())
+
+	err = os.Setenv(EnvConfigKey, f1.Name())
 	assert.NoError(t, err)
 
-	//Setup metadata
-	f2, err := os.CreateTemp("", "tanzu_config_metadata")
+	f2, err := os.CreateTemp("", "tanzu_config_v2")
 	assert.Nil(t, err)
 	err = os.WriteFile(f2.Name(), []byte(""), 0644)
 	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigV2Key, f2.Name())
+	assert.NoError(t, err)
+
+	//Setup metadata
+	fMeta, err := os.CreateTemp("", "tanzu_config_metadata")
+	assert.Nil(t, err)
+	err = os.WriteFile(fMeta.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigMetadataKey, fMeta.Name())
+	assert.NoError(t, err)
+
+	// Cleanup
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(f1.Name())
+
 	defer func(name string) {
 		err = os.Remove(name)
 		assert.NoError(t, err)
 	}(f2.Name())
-	err = os.Setenv(EnvConfigMetadataKey, f2.Name())
-	assert.NoError(t, err)
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(fMeta.Name())
 
 	tests := []struct {
 		name         string
@@ -688,28 +844,46 @@ func TestSetCLIDiscoverySourceWithDefaultAndDefaultLocal(t *testing.T) {
 
 func TestSetCLIDiscoverySourceMultiTypes(t *testing.T) {
 	// Setup config data
-	f, err := os.CreateTemp("", "tanzu_config")
+	f1, err := os.CreateTemp("", "tanzu_config")
 	assert.Nil(t, err)
-	err = os.WriteFile(f.Name(), []byte(""), 0644)
+	err = os.WriteFile(f1.Name(), []byte(""), 0644)
 	assert.Nil(t, err)
-	defer func(name string) {
-		err = os.Remove(name)
-		assert.NoError(t, err)
-	}(f.Name())
-	err = os.Setenv("TANZU_CONFIG", f.Name())
+
+	err = os.Setenv(EnvConfigKey, f1.Name())
 	assert.NoError(t, err)
 
-	//Setup metadata
-	f2, err := os.CreateTemp("", "tanzu_config_metadata")
+	f2, err := os.CreateTemp("", "tanzu_config_v2")
 	assert.Nil(t, err)
 	err = os.WriteFile(f2.Name(), []byte(""), 0644)
 	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigV2Key, f2.Name())
+	assert.NoError(t, err)
+
+	//Setup metadata
+	fMeta, err := os.CreateTemp("", "tanzu_config_metadata")
+	assert.Nil(t, err)
+	err = os.WriteFile(fMeta.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigMetadataKey, fMeta.Name())
+	assert.NoError(t, err)
+
+	// Cleanup
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(f1.Name())
+
 	defer func(name string) {
 		err = os.Remove(name)
 		assert.NoError(t, err)
 	}(f2.Name())
-	err = os.Setenv(EnvConfigMetadataKey, f2.Name())
-	assert.NoError(t, err)
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(fMeta.Name())
 
 	tests := []struct {
 		name         string

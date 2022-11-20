@@ -17,7 +17,7 @@ import (
 // IsFeatureEnabled checks and returns whether specific plugin and key is true
 func IsFeatureEnabled(plugin, key string) (bool, error) {
 	// Retrieve client config node
-	node, err := getClientConfigNode()
+	node, err := getClientConfig()
 	if err != nil {
 		return false, err
 	}
@@ -47,10 +47,21 @@ func getFeature(node *yaml.Node, plugin, key string) (string, error) {
 
 // DeleteFeature deletes the specified plugin key
 func DeleteFeature(plugin, key string) error {
-	// Retrieve client config node
-	AcquireTanzuConfigLock()
-	defer ReleaseTanzuConfigLock()
-	node, err := getClientConfigNodeNoLock()
+	// Acquire file lock for config.yaml and config-v2.yaml based on feature flag
+	migrate, err := ShouldMigrateToNewConfig()
+	if err != nil {
+		migrate = false
+	}
+	if migrate {
+		AcquireTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigV2Lock()
+	} else {
+		AcquireTanzuConfigV2Lock()
+		AcquireTanzuConfigLock()
+		defer ReleaseTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigLock()
+	}
+	node, err := getClientConfigNoLock()
 	if err != nil {
 		return err
 	}
@@ -87,10 +98,21 @@ func deleteFeature(node *yaml.Node, plugin, key string) error {
 
 // SetFeature add or update plugin key value
 func SetFeature(plugin, key, value string) (err error) {
-	// Retrieve client config node
-	AcquireTanzuConfigLock()
-	defer ReleaseTanzuConfigLock()
-	node, err := getClientConfigNodeNoLock()
+	// Acquire file lock for config.yaml and config-v2.yaml based on feature flag
+	migrate, err := ShouldMigrateToNewConfig()
+	if err != nil {
+		migrate = false
+	}
+	if migrate {
+		AcquireTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigV2Lock()
+	} else {
+		AcquireTanzuConfigV2Lock()
+		AcquireTanzuConfigLock()
+		defer ReleaseTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigLock()
+	}
+	node, err := getClientConfigNoLock()
 	if err != nil {
 		return err
 	}
@@ -131,9 +153,21 @@ func setFeature(node *yaml.Node, plugin, key, value string) (persist bool, err e
 
 // ConfigureDefaultFeatureFlagsIfMissing add or update plugin features based on specified default feature flags
 func ConfigureDefaultFeatureFlagsIfMissing(plugin string, defaultFeatureFlags map[string]bool) error {
-	AcquireTanzuConfigLock()
-	defer ReleaseTanzuConfigLock()
-	node, err := getClientConfigNodeNoLock()
+	// Acquire tanzu config lock for config.yaml and config-v2.yaml based on feature flag
+	migrate, err := ShouldMigrateToNewConfig()
+	if err != nil {
+		migrate = false
+	}
+	if migrate {
+		AcquireTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigV2Lock()
+	} else {
+		AcquireTanzuConfigV2Lock()
+		AcquireTanzuConfigLock()
+		defer ReleaseTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigLock()
+	}
+	node, err := getClientConfigNoLock()
 	if err != nil {
 		return err
 	}

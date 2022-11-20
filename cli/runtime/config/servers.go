@@ -18,7 +18,7 @@ import (
 // GetServer retrieves server by name
 func GetServer(name string) (*configapi.Server, error) {
 	// Retrieve client config node
-	node, err := getClientConfigNode()
+	node, err := getClientConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func ServerExists(name string) (bool, error) {
 // GetCurrentServer retrieves the current server
 func GetCurrentServer() (*configapi.Server, error) {
 	// Retrieve client config node
-	node, err := getClientConfigNode()
+	node, err := getClientConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -43,10 +43,21 @@ func GetCurrentServer() (*configapi.Server, error) {
 
 // SetCurrentServer add or update current server
 func SetCurrentServer(name string) error {
-	// Retrieve client config node
-	AcquireTanzuConfigLock()
-	defer ReleaseTanzuConfigLock()
-	node, err := getClientConfigNodeNoLock()
+	// Acquire file lock for config.yaml and config-v2.yaml based on feature flag
+	migrate, err := ShouldMigrateToNewConfig()
+	if err != nil {
+		migrate = false
+	}
+	if migrate {
+		AcquireTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigV2Lock()
+	} else {
+		AcquireTanzuConfigV2Lock()
+		AcquireTanzuConfigLock()
+		defer ReleaseTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigLock()
+	}
+	node, err := getClientConfigNoLock()
 	if err != nil {
 		return err
 	}
@@ -81,10 +92,21 @@ func SetCurrentServer(name string) error {
 
 // RemoveCurrentServer removes the current server if server exists by specified name
 func RemoveCurrentServer(name string) error {
-	// Retrieve client config node
-	AcquireTanzuConfigLock()
-	defer ReleaseTanzuConfigLock()
-	node, err := getClientConfigNodeNoLock()
+	// Acquire file lock for config.yaml and config-v2.yaml based on feature flag
+	migrate, err := ShouldMigrateToNewConfig()
+	if err != nil {
+		migrate = false
+	}
+	if migrate {
+		AcquireTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigV2Lock()
+	} else {
+		AcquireTanzuConfigV2Lock()
+		AcquireTanzuConfigLock()
+		defer ReleaseTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigLock()
+	}
+	node, err := getClientConfigNoLock()
 	if err != nil {
 		return err
 	}
@@ -121,10 +143,22 @@ func AddServer(s *configapi.Server, setCurrent bool) error {
 
 // SetServer add or update server and currentServer
 func SetServer(s *configapi.Server, setCurrent bool) error {
-	// Acquire tanzu config lock
-	AcquireTanzuConfigLock()
-	defer ReleaseTanzuConfigLock()
-	node, err := getClientConfigNodeNoLock()
+	// Acquire tanzu config lock for config.yaml and config-v2.yaml based on feature flag
+	migrate, err := ShouldMigrateToNewConfig()
+	if err != nil {
+		migrate = false
+	}
+	if migrate {
+		AcquireTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigV2Lock()
+	} else {
+		AcquireTanzuConfigV2Lock()
+		AcquireTanzuConfigLock()
+		defer ReleaseTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigLock()
+	}
+
+	node, err := getClientConfigNoLock()
 	if err != nil {
 		return err
 	}
@@ -138,6 +172,7 @@ func SetServer(s *configapi.Server, setCurrent bool) error {
 			return err
 		}
 	}
+
 	if setCurrent {
 		persist, err = setCurrentServer(node, s.Name)
 		if err != nil {
@@ -155,7 +190,6 @@ func SetServer(s *configapi.Server, setCurrent bool) error {
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -194,9 +228,21 @@ func DeleteServer(name string) error {
 
 // RemoveServer removed the server by name
 func RemoveServer(name string) error {
-	AcquireTanzuConfigLock()
-	defer ReleaseTanzuConfigLock()
-	node, err := getClientConfigNodeNoLock()
+	// Acquire tanzu config lock for config.yaml and config-v2.yaml based on feature flag
+	migrate, err := ShouldMigrateToNewConfig()
+	if err != nil {
+		migrate = false
+	}
+	if migrate {
+		AcquireTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigV2Lock()
+	} else {
+		AcquireTanzuConfigV2Lock()
+		AcquireTanzuConfigLock()
+		defer ReleaseTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigLock()
+	}
+	node, err := getClientConfigNoLock()
 	if err != nil {
 		return err
 	}
@@ -333,6 +379,7 @@ func removeCurrentServer(node *yaml.Node, name string) error {
 	return nil
 }
 
+//nolint:dupl
 func removeServer(node *yaml.Node, name string) error {
 	// find servers node
 	keys := []nodeutils.Key{
@@ -340,7 +387,7 @@ func removeServer(node *yaml.Node, name string) error {
 	}
 	serversNode := nodeutils.FindNode(node.Content[0], nodeutils.WithKeys(keys))
 	if serversNode == nil {
-		return nodeutils.ErrNodeNotFound
+		return nil
 	}
 	var servers []*yaml.Node
 	for _, serverNode := range serversNode.Content {
@@ -382,10 +429,12 @@ func setServer(node *yaml.Node, s *configapi.Server) (persist bool, err error) {
 	keys := []nodeutils.Key{
 		{Name: KeyServers, Type: yaml.SequenceNode},
 	}
+
 	serversNode := nodeutils.FindNode(node.Content[0], nodeutils.WithForceCreate(), nodeutils.WithKeys(keys))
 	if serversNode == nil {
 		return persist, nodeutils.ErrNodeNotFound
 	}
+
 	exists := false
 	var result []*yaml.Node
 	//nolint: dupl

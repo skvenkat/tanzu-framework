@@ -28,7 +28,48 @@ func randString() string {
 }
 
 func TestClientConfig(t *testing.T) {
-	LocalDirName = fmt.Sprintf(".tanzu-test-%s", randString())
+	// Setup config data
+	f1, err := os.CreateTemp("", "tanzu_config")
+	assert.Nil(t, err)
+	err = os.WriteFile(f1.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigKey, f1.Name())
+	assert.NoError(t, err)
+
+	f2, err := os.CreateTemp("", "tanzu_config_v2")
+	assert.Nil(t, err)
+	err = os.WriteFile(f2.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigV2Key, f2.Name())
+	assert.NoError(t, err)
+
+	//Setup metadata
+	fMeta, err := os.CreateTemp("", "tanzu_config_metadata")
+	assert.Nil(t, err)
+	err = os.WriteFile(fMeta.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigMetadataKey, fMeta.Name())
+	assert.NoError(t, err)
+
+	// Cleanup
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(f1.Name())
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(f2.Name())
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(fMeta.Name())
+
 	server0 := &configapi.Server{
 		Name: "test",
 		Type: configapi.ManagementClusterServerType,
@@ -43,10 +84,9 @@ func TestClientConfig(t *testing.T) {
 		CurrentServer: "test",
 	}
 	AcquireTanzuConfigLock()
-	err := StoreClientConfig(testCtx)
+	err = StoreClientConfig(testCtx)
 	require.NoError(t, err)
 	ReleaseTanzuConfigLock()
-	defer cleanupDir(LocalDirName)
 	_, err = GetClientConfig()
 	require.NoError(t, err)
 	s, err := GetServer("test")
@@ -91,13 +131,59 @@ func TestClientConfig(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, c.KnownServers, 0)
 	require.Equal(t, c.CurrentServer, "")
-	err = DeleteClientConfig()
-	require.NoError(t, err)
 }
 
 func TestConfigLegacyDir(t *testing.T) {
 	r := randString()
-	LocalDirName = fmt.Sprintf(".tanzu-test-%s", r)
+	// Setup config data
+	//f1, err := os.CreateTemp("", "tanzu_config")
+	//assert.Nil(t, err)
+	//err = os.WriteFile(f1.Name(), []byte(""), 0644)
+	//assert.Nil(t, err)
+	//
+	//err = os.Setenv(EnvConfigKey, f1.Name())
+	//assert.NoError(t, err)
+
+	func() {
+		LocalDirName = TestLocalDirName
+	}()
+	defer func() {
+		cleanupDir(LocalDirName)
+	}()
+
+	f2, err := os.CreateTemp("", "tanzu_config_v2")
+	assert.Nil(t, err)
+	err = os.WriteFile(f2.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigV2Key, f2.Name())
+	assert.NoError(t, err)
+
+	//Setup metadata
+	fMeta, err := os.CreateTemp("", "tanzu_config_metadata")
+	assert.Nil(t, err)
+	err = os.WriteFile(fMeta.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigMetadataKey, fMeta.Name())
+	assert.NoError(t, err)
+
+	// Cleanup
+	//defer func(name string) {
+	//	err = os.Remove(name)
+	//	assert.NoError(t, err)
+	//}(f1.Name())
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(f2.Name())
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(fMeta.Name())
+
 	// Setup legacy config dir.
 	legacyLocalDirName = fmt.Sprintf(".tanzu-test-legacy-%s", r)
 	legacyLocalDir, err := legacyLocalDir()
@@ -124,7 +210,6 @@ func TestConfigLegacyDir(t *testing.T) {
 	ReleaseTanzuConfigLock()
 	require.NoError(t, err)
 	require.FileExists(t, legacyCfgPath)
-	defer cleanupDir(LocalDirName)
 	defer cleanupDir(legacyLocalDirName)
 	_, err = GetClientConfig()
 	require.NoError(t, err)
@@ -174,23 +259,58 @@ servers:
   name: mgmt
   type: managementcluster
 `
-	f, err := os.CreateTemp("", "tanzu_config")
+	// Setup config data
+	f1, err := os.CreateTemp("", "tanzu_config")
 	assert.Nil(t, err)
-	err = os.WriteFile(f.Name(), []byte(tanzuConfigBytes), 0644)
+	err = os.WriteFile(f1.Name(), []byte(tanzuConfigBytes), 0644)
 	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigKey, f1.Name())
+	assert.NoError(t, err)
+
+	f2, err := os.CreateTemp("", "tanzu_config_v2")
+	assert.Nil(t, err)
+	err = os.WriteFile(f2.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigV2Key, f2.Name())
+	assert.NoError(t, err)
+
+	//Setup metadata
+	fMeta, err := os.CreateTemp("", "tanzu_config_metadata")
+	assert.Nil(t, err)
+	err = os.WriteFile(fMeta.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigMetadataKey, fMeta.Name())
+	assert.NoError(t, err)
+
+	// Cleanup
 	defer func(name string) {
 		err = os.Remove(name)
 		assert.NoError(t, err)
-	}(f.Name())
-	err = os.Setenv("TANZU_CONFIG", f.Name())
-	assert.NoError(t, err)
+	}(f1.Name())
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(f2.Name())
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(fMeta.Name())
+
 	pds := GetDiscoverySources("mgmt")
 	assert.Equal(t, 1, len(pds))
 	assert.Equal(t, pds[0].Kubernetes.Name, "default-mgmt")
 	assert.Equal(t, pds[0].Kubernetes.Path, "config")
 	assert.Equal(t, pds[0].Kubernetes.Context, "mgmt-admin@mgmt")
+}
+
+func TestTMCGlobalServer(t *testing.T) {
 	// Test tmc global server
-	tanzuConfigBytes = `apiVersion: config.tanzu.vmware.com/v1alpha1
+	tanzuConfigBytes := `apiVersion: config.tanzu.vmware.com/v1alpha1
 clientOptions:
   cli:
     useContextAwareDiscovery: true
@@ -204,17 +324,50 @@ servers:
   name: tmc-test
   type: global
 `
-	tf, err := os.CreateTemp("", "tanzu_tmc_config")
+
+	// Setup config data
+	f1, err := os.CreateTemp("", "tanzu_config")
 	assert.Nil(t, err)
-	err = os.WriteFile(tf.Name(), []byte(tanzuConfigBytes), 0644)
+	err = os.WriteFile(f1.Name(), []byte(tanzuConfigBytes), 0644)
 	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigKey, f1.Name())
+	assert.NoError(t, err)
+
+	f2, err := os.CreateTemp("", "tanzu_config_v2")
+	assert.Nil(t, err)
+	err = os.WriteFile(f2.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigV2Key, f2.Name())
+	assert.NoError(t, err)
+
+	//Setup metadata
+	fMeta, err := os.CreateTemp("", "tanzu_config_metadata")
+	assert.Nil(t, err)
+	err = os.WriteFile(fMeta.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigMetadataKey, fMeta.Name())
+	assert.NoError(t, err)
+
+	// Cleanup
 	defer func(name string) {
 		err = os.Remove(name)
 		assert.NoError(t, err)
-	}(tf.Name())
-	err = os.Setenv("TANZU_CONFIG", tf.Name())
-	assert.Nil(t, err)
-	pds = GetDiscoverySources("tmc-test")
+	}(f1.Name())
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(f2.Name())
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(fMeta.Name())
+
+	pds := GetDiscoverySources("tmc-test")
 	assert.Equal(t, 1, len(pds))
 	assert.Equal(t, pds[0].REST.Endpoint, "https://test.cloud.vmware.com")
 	assert.Equal(t, pds[0].REST.BasePath, "v1alpha1/system/binaries/plugins")
@@ -244,15 +397,48 @@ func TestClientConfigUpdateInParallel(t *testing.T) {
 	}
 	// Creates temp configuration file and runs addServer in parallel
 	runTestInParallel := func() {
-		// Get the temp tanzu config file
-		f, err := os.CreateTemp("", "tanzu_config*")
+		// Setup config data
+		f1, err := os.CreateTemp("", "tanzu_config")
 		assert.Nil(t, err)
+		err = os.WriteFile(f1.Name(), []byte(""), 0644)
+		assert.Nil(t, err)
+
+		err = os.Setenv(EnvConfigKey, f1.Name())
+		assert.NoError(t, err)
+
+		f2, err := os.CreateTemp("", "tanzu_config_v2")
+		assert.Nil(t, err)
+		err = os.WriteFile(f2.Name(), []byte(""), 0644)
+		assert.Nil(t, err)
+
+		err = os.Setenv(EnvConfigV2Key, f2.Name())
+		assert.NoError(t, err)
+
+		//Setup metadata
+		fMeta, err := os.CreateTemp("", "tanzu_config_metadata")
+		assert.Nil(t, err)
+		err = os.WriteFile(fMeta.Name(), []byte(""), 0644)
+		assert.Nil(t, err)
+
+		err = os.Setenv(EnvConfigMetadataKey, fMeta.Name())
+		assert.NoError(t, err)
+
+		// Cleanup
 		defer func(name string) {
 			err = os.Remove(name)
 			assert.NoError(t, err)
-		}(f.Name())
-		err = os.Setenv("TANZU_CONFIG", f.Name())
-		assert.NoError(t, err)
+		}(f1.Name())
+
+		defer func(name string) {
+			err = os.Remove(name)
+			assert.NoError(t, err)
+		}(f2.Name())
+
+		defer func(name string) {
+			err = os.Remove(name)
+			assert.NoError(t, err)
+		}(fMeta.Name())
+
 		// run addServer in parallel
 		parallelExecutionCounter := 100
 		group, _ := errgroup.WithContext(context.Background())
@@ -263,7 +449,7 @@ func TestClientConfigUpdateInParallel(t *testing.T) {
 			})
 		}
 		err = group.Wait()
-		rawContents, readErr := os.ReadFile(f.Name())
+		rawContents, readErr := os.ReadFile(f1.Name())
 		assert.Nil(t, readErr, "Error reading config: %s", readErr)
 		assert.Nil(t, err, "Config file contents: \n%s", rawContents)
 		// Make sure that the configuration file is not corrupted

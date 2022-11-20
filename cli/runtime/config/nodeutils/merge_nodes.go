@@ -54,7 +54,9 @@ func MergeNodes(src, dst *yaml.Node) error {
 			return errors.New("at key " + src.Content[0].Value + ": " + err.Error())
 		}
 	case yaml.ScalarNode:
-		setScalarNode(src, dst)
+		if dst.Value != src.Value {
+			dst.Value = src.Value
+		}
 	default:
 		return errors.New("can only merge mapping and sequence nodes")
 	}
@@ -64,12 +66,6 @@ func MergeNodes(src, dst *yaml.Node) error {
 func setSeqNode(src, dst *yaml.Node) {
 	if dst.Content[0].Kind == yaml.ScalarNode && src.Content[0].Kind == yaml.ScalarNode {
 		dst.Content = append(dst.Content, src.Content...)
-	}
-}
-
-func setScalarNode(src, dst *yaml.Node) {
-	if dst.Value != src.Value {
-		dst.Value = src.Value
 	}
 }
 

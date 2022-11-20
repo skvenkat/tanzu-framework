@@ -14,7 +14,7 @@ import (
 // GetAllEnvs retrieves all env values from config
 func GetAllEnvs() (map[string]string, error) {
 	// Retrieve client config node
-	node, err := getClientConfigNode()
+	node, err := getClientConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func getAllEnvs(node *yaml.Node) (map[string]string, error) {
 // GetEnv retrieves env value by key
 func GetEnv(key string) (string, error) {
 	// Retrieve client config node
-	node, err := getClientConfigNode()
+	node, err := getClientConfig()
 	if err != nil {
 		return "", err
 	}
@@ -58,10 +58,21 @@ func getEnv(node *yaml.Node, key string) (string, error) {
 
 // DeleteEnv delete the env entry of specified key
 func DeleteEnv(key string) error {
-	// Retrieve client config node
-	AcquireTanzuConfigLock()
-	defer ReleaseTanzuConfigLock()
-	node, err := getClientConfigNodeNoLock()
+	// Acquire file lock for config.yaml and config-v2.yaml based on feature flag
+	migrate, err := ShouldMigrateToNewConfig()
+	if err != nil {
+		migrate = false
+	}
+	if migrate {
+		AcquireTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigV2Lock()
+	} else {
+		AcquireTanzuConfigV2Lock()
+		AcquireTanzuConfigLock()
+		defer ReleaseTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigLock()
+	}
+	node, err := getClientConfigNoLock()
 	if err != nil {
 		return err
 	}
@@ -103,10 +114,21 @@ func deleteEnv(node *yaml.Node, key string) (err error) {
 
 // SetEnv add or update a env key and value
 func SetEnv(key, value string) (err error) {
-	// Retrieve client config node
-	AcquireTanzuConfigLock()
-	defer ReleaseTanzuConfigLock()
-	node, err := getClientConfigNodeNoLock()
+	// Acquire file lock for config.yaml and config-v2.yaml based on feature flag
+	migrate, err := ShouldMigrateToNewConfig()
+	if err != nil {
+		migrate = false
+	}
+	if migrate {
+		AcquireTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigV2Lock()
+	} else {
+		AcquireTanzuConfigV2Lock()
+		AcquireTanzuConfigLock()
+		defer ReleaseTanzuConfigV2Lock()
+		defer ReleaseTanzuConfigLock()
+	}
+	node, err := getClientConfigNoLock()
 	if err != nil {
 		return err
 	}
@@ -122,6 +144,7 @@ func SetEnv(key, value string) (err error) {
 	return err
 }
 
+//nolint:dupl
 func setEnv(node *yaml.Node, key, value string) (persist bool, err error) {
 	// find env node
 	keys := []nodeutils.Key{

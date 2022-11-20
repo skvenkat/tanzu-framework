@@ -98,6 +98,8 @@ func setDiscoverySource(discoverySourcesNode *yaml.Node, discoverySource configa
 				// check if same name already exists
 				isSameNameAlreadyExists := discoverySourceNode.Content[discoverySourceIndexOfAnyType].Content[nameIdx].Value == newOrUpdatedDiscoverySourceName
 				// check if name is default or default-local
+				// default and default-local are considered same since default is used for official builds when CLI is built with OCI source.
+				// default-local is used for developer builds. And we do not expect these 2 discoverySources to be present at the same time.
 				isNameDefaultOrDefaultLocal := checkFoDiscoverySourceDefaultAndDefaultLocalName(discoverySourceNode.Content[discoverySourceIndexOfAnyType].Content[nameIdx].Value, newOrUpdatedDiscoverySourceName)
 				// check if matching discovery source found based on name
 				if isSameNameAlreadyExists || isNameDefaultOrDefaultLocal {

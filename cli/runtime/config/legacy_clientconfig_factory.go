@@ -22,20 +22,16 @@ func GetClientConfig() (cfg *configapi.ClientConfig, err error) {
 
 // GetClientConfigNoLock retrieves the config from the local directory without acquiring the lock
 func GetClientConfigNoLock() (cfg *configapi.ClientConfig, err error) {
-	cfgPath, err := ClientConfigPath()
+	node, err := getClientConfigNoLock()
 	if err != nil {
 		return nil, err
 	}
-	b, err := os.ReadFile(cfgPath)
-	if err != nil || len(b) == 0 {
-		cfg = &configapi.ClientConfig{}
-		return cfg, nil
-	}
-	// Logging
-	err = yaml.Unmarshal(b, &cfg)
+
+	cfg, err = convertNodeToClientConfig(node)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to construct struct from config data")
+		return nil, err
 	}
+
 	return cfg, nil
 }
 
@@ -48,45 +44,52 @@ func StoreClientConfig(cfg *configapi.ClientConfig) error {
 	populateServers(cfg)
 	// old plugins would be setting only servers, so populate contexts for forwards compatibility
 	PopulateContexts(cfg)
-	node, err := getClientConfigNodeNoLock()
+
+	cfgNode, err := getClientConfigNoLock()
 	if err != nil {
 		return err
 	}
+
 	if cfg.Kind != "" {
-		_, err = setKind(node, cfg.Kind)
+		_, err = setKind(cfgNode, cfg.Kind)
 		if err != nil {
 			return err
 		}
 	}
 	if cfg.APIVersion != "" {
-		_, err = setAPIVersion(node, cfg.APIVersion)
+		_, err = setAPIVersion(cfgNode, cfg.APIVersion)
 		if err != nil {
 			return err
 		}
 	}
-	err = setServers(node, cfg.KnownServers)
+	err = setServers(cfgNode, cfg.KnownServers)
 	if err != nil {
 		return err
 	}
 	if cfg.CurrentServer != "" {
-		_, err = setCurrentServer(node, cfg.CurrentServer)
+		_, err = setCurrentServer(cfgNode, cfg.CurrentServer)
 		if err != nil {
 			return err
 		}
 	}
-	err = setContexts(node, cfg.KnownContexts)
+	err = setContexts(cfgNode, cfg.KnownContexts)
 	if err != nil {
 		return err
 	}
-	err = clientConfigSetCurrentContext(cfg, node)
+	err = clientConfigSetCurrentContext(cfg, cfgNode)
 	if err != nil {
 		return err
 	}
-	err = clientConfigSetClientOptions(cfg, node)
+	err = clientConfigSetClientOptions(cfg, cfgNode)
 	if err != nil {
 		return err
 	}
-	return persistConfig(node)
+	err = persistConfig(cfgNode)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func clientConfigSetClientOptions(cfg *configapi.ClientConfig, node *yaml.Node) error {
@@ -210,6 +213,25 @@ func DeleteClientConfig() error {
 	err = os.Remove(cfgPath)
 	if err != nil {
 		return errors.Wrap(err, "could not remove config")
+	}
+	// Provide backward compatibility
+
+	err = DeleteClientConfigV2()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// DeleteClientConfigV2 deletes the config from the local directory.
+func DeleteClientConfigV2() error {
+	cfgPath, err := ClientConfigV2Path()
+	if err != nil {
+		return err
+	}
+	err = os.Remove(cfgPath)
+	if err != nil {
+		return errors.Wrap(err, "could not remove config-alt")
 	}
 	return nil
 }
