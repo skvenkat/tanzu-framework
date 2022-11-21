@@ -24,7 +24,19 @@ func equalScalars(left, right *yaml.Node) (bool, error) {
 }
 
 // MergeNodes to merge two yaml nodes src(source) to dst(destination) node
-func MergeNodes(src, dst *yaml.Node) error {
+func MergeNodes(src, dst *yaml.Node) (bool, error) {
+	// only replace if the change is not equal to existing
+	mergeUnequalObjects, err := NotEqual(src, dst)
+	if err != nil {
+		return false, err
+	}
+	if !mergeUnequalObjects {
+		return mergeUnequalObjects, nil
+	}
+	return mergeUnequalObjects, mergeNodes(src, dst)
+}
+
+func mergeNodes(src, dst *yaml.Node) error {
 	err := checkErrors(src, dst)
 	if err != nil {
 		return err
@@ -36,8 +48,8 @@ func MergeNodes(src, dst *yaml.Node) error {
 			for j := 0; j < len(dst.Content); j += 2 {
 				if ok, _ := equalScalars(src.Content[i], dst.Content[j]); ok {
 					found = true
-					if err := MergeNodes(src.Content[i+1], dst.Content[j+1]); err != nil {
-						return errors.New("at key " + src.Content[i].Value + ": " + err.Error())
+					if err := mergeNodes(src.Content[i+1], dst.Content[j+1]); err != nil {
+						return errors.New("merge at key " + src.Content[i].Value + ": " + err.Error())
 					}
 					break
 				}
@@ -49,9 +61,9 @@ func MergeNodes(src, dst *yaml.Node) error {
 	case yaml.SequenceNode:
 		setSeqNode(src, dst)
 	case yaml.DocumentNode:
-		err := MergeNodes(src.Content[0], dst.Content[0])
+		err := mergeNodes(src.Content[0], dst.Content[0])
 		if err != nil {
-			return errors.New("at key " + src.Content[0].Value + ": " + err.Error())
+			return errors.New("merge at key " + src.Content[0].Value + ": " + err.Error())
 		}
 	case yaml.ScalarNode:
 		setScalarNode(src, dst)

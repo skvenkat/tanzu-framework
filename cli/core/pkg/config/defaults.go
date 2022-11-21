@@ -22,7 +22,7 @@ var (
 	DefaultStandaloneDiscoveryImagePath  = ""
 	DefaultStandaloneDiscoveryImageTag   = ""
 	DefaultStandaloneDiscoveryName       = "default"
-	DefaultStandaloneDiscoveryNameLocal  = "default-local"
+	DefaultStandaloneDiscoveryNameLocal  = "default"
 	DefaultStandaloneDiscoveryType       = common.DistributionTypeOCI
 	DefaultStandaloneDiscoveryLocalPath  = ""
 )
