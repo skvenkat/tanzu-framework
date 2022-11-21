@@ -558,6 +558,9 @@ test: generate manifests build-cli-mocks ## Run tests
 	# Cluster plugin tests
 	$(MAKE) test -C cmd/cli/plugin/managementcluster
 
+        # airgapped-network plugin tests
+	$(MAKE) test -C cmd/cli/plugin/airgapped-network
+
 .PHONY: test-cli
 test-cli: build-cli-mocks ## Run tests
 	$(GO) test  ./pkg/v1/auth/... ./pkg/v1/builder/...  ./pkg/v1/encoding/... ./pkg/v1/grpc/...

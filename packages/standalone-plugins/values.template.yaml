@@ -14,3 +14,5 @@ secret:
   version: VERSION
 telemetry:
   version: VERSION
+airgappednetwork:
+  version: VERSION

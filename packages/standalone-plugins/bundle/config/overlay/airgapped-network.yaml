@@ -1,0 +1,29 @@
+#@ load("@ytt:data", "data")
+#@ load("@ytt:overlay", "overlay")
+
+---
+apiVersion: cli.tanzu.vmware.com/v1alpha1
+kind: CLIPlugin
+metadata:
+  name: airgapped-network
+  annotations:
+    kapp.k14s.io/change-rule: "upsert after upserting cliplugins.cli.tanzu.vmware.com/crd"
+spec:
+  artifacts:
+    #@yaml/text-templated-strings
+    (@= data.values.airgappednetwork.version @):
+      - arch: amd64
+        image: tanzu-cli-plugins/airgapped-network-darwin-amd64:latest
+        os: darwin
+        type: oci
+      - arch: amd64
+        image: tanzu-cli-plugins/airgapped-network-linux-amd64:latest
+        os: linux
+        type: oci
+      - arch: amd64
+        image: tanzu-cli-plugins/airgapped-network-windows-amd64:latest
+        os: windows
+        type: oci
+  description: Copy images to airgapped network
+  optional: false
+  recommendedVersion: #@ data.values.airgappednetwork.version
