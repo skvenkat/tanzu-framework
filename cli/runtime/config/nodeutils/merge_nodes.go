@@ -73,6 +73,7 @@ func mergeNodes(src, dst *yaml.Node) error {
 	return nil
 }
 
+// Construct unique sequence nodes for scalar value type
 func setSeqNode(src, dst *yaml.Node) {
 	if dst.Content[0].Kind == yaml.ScalarNode && src.Content[0].Kind == yaml.ScalarNode {
 		dst.Content = append(dst.Content, src.Content...)
