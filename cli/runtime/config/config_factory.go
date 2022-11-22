@@ -7,7 +7,6 @@ package config
 import (
 	"os"
 
-	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
 	"github.com/vmware-tanzu/tanzu-framework/cli/runtime/config/nodeutils"
 	"gopkg.in/yaml.v3"
@@ -28,13 +27,15 @@ func persistConfig(node *yaml.Node) error {
 		return err
 	}
 
-	// copy of change node to persist
+	// deep copy of change node
 	var cfgNodeToPersist yaml.Node
-	err = copier.CopyWithOption(&cfgNodeToPersist, node, copier.Option{
-		DeepCopy: true,
-	})
+	data, err := yaml.Marshal(node)
 	if err != nil {
-		return errors.Wrap(err, "failed to clone")
+		return err
+	}
+	err = yaml.Unmarshal(data, &cfgNodeToPersist)
+	if err != nil {
+		return err
 	}
 
 	cfgV2Node, err := getClientConfigV2NodeNoLock()

@@ -136,13 +136,13 @@ func TestClientConfig(t *testing.T) {
 func TestConfigLegacyDir(t *testing.T) {
 	r := randString()
 	// Setup config data
-	//f1, err := os.CreateTemp("", "tanzu_config")
-	//assert.Nil(t, err)
-	//err = os.WriteFile(f1.Name(), []byte(""), 0644)
-	//assert.Nil(t, err)
-	//
-	//err = os.Setenv(EnvConfigKey, f1.Name())
-	//assert.NoError(t, err)
+	f1, err := os.CreateTemp("", "tanzu_config")
+	assert.Nil(t, err)
+	err = os.WriteFile(f1.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigKey, f1.Name())
+	assert.NoError(t, err)
 
 	func() {
 		LocalDirName = TestLocalDirName
@@ -169,10 +169,10 @@ func TestConfigLegacyDir(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Cleanup
-	//defer func(name string) {
-	//	err = os.Remove(name)
-	//	assert.NoError(t, err)
-	//}(f1.Name())
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(f1.Name())
 
 	defer func(name string) {
 		err = os.Remove(name)
@@ -192,25 +192,28 @@ func TestConfigLegacyDir(t *testing.T) {
 	require.NoError(t, err)
 	legacyCfgPath, err := legacyConfigPath()
 	require.NoError(t, err)
-	server0 := &configapi.Server{
-		Name: "test",
-		Type: configapi.ManagementClusterServerType,
-		ManagementClusterOpts: &configapi.ManagementClusterServer{
-			Path: "test",
-		},
-	}
-	testCtx := &configapi.ClientConfig{
+	defer cleanupDir(legacyLocalDirName)
+
+	//Setup data
+	testCfg := &configapi.ClientConfig{
 		KnownServers: []*configapi.Server{
-			server0,
+			{
+				Name: "test",
+				Type: configapi.ManagementClusterServerType,
+				ManagementClusterOpts: &configapi.ManagementClusterServer{
+					Path: "test",
+				},
+			},
 		},
 		CurrentServer: "test",
 	}
+
 	AcquireTanzuConfigLock()
-	err = StoreClientConfig(testCtx)
+	err = StoreClientConfig(testCfg)
 	ReleaseTanzuConfigLock()
 	require.NoError(t, err)
 	require.FileExists(t, legacyCfgPath)
-	defer cleanupDir(legacyLocalDirName)
+
 	_, err = GetClientConfig()
 	require.NoError(t, err)
 	server1 := &configapi.Server{
@@ -220,8 +223,10 @@ func TestConfigLegacyDir(t *testing.T) {
 			Path: "test1",
 		},
 	}
+
 	err = SetServer(server1, true)
 	require.NoError(t, err)
+
 	c, err := GetClientConfig()
 	require.NoError(t, err)
 	require.Len(t, c.KnownServers, 2)
