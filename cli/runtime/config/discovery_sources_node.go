@@ -26,8 +26,7 @@ const (
 )
 
 const (
-	Default      = "default"
-	DefaultLocal = "default-local"
+	Default = "default"
 )
 
 // setDiscoverySources adds or updates the node discoverySources
@@ -152,10 +151,10 @@ func getDiscoverySourceTypeAndName(discoverySource configapi.PluginDiscovery) (s
 }
 
 // Find the matching discovery source type and index from accepted discovery sources
-func findDiscoverySourceTypeAndIndexByWeakMatch(currentNodes []*yaml.Node) (string, int) {
+func findDiscoverySourceTypeAndIndexByWeakMatch(discoverySourceContentNodes []*yaml.Node) (string, int) {
 	acceptedDiscoverySources := []string{DiscoveryTypeOCI, DiscoveryTypeLocal, DiscoveryTypeGCP, DiscoveryTypeKubernetes, DiscoveryTypeREST}
 	for _, discoverySourceType := range acceptedDiscoverySources {
-		idx := nodeutils.GetNodeIndex(currentNodes, discoverySourceType)
+		idx := nodeutils.GetNodeIndex(discoverySourceContentNodes, discoverySourceType)
 		if idx != -1 {
 			return discoverySourceType, idx
 		}

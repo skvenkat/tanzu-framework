@@ -73,6 +73,13 @@ contexts:
           annotation: one
           required: true
         contextType: tmc
+      - local:
+          name: test-local
+          bucket: test-bucket2
+          manifestPath: test-manifest-path2
+          annotation: one
+          required: true
+        contextType: tmc
 currentContext:
   k8s: test-mc
 `
@@ -107,6 +114,10 @@ servers:
             annotation: one
             required: true
           contextType: tmc
+        - local:
+            name: test-local
+            path: test-local-path
+          contextType: tmc
 current: test-mc
 contexts:
     - name: test-mc
@@ -131,6 +142,14 @@ contexts:
             manifestPath: test-manifest-path2
             annotation: one
             required: true
+          contextType: tmc
+        - local:
+            name: test-local
+            bucket: test-bucket2
+            manifestPath: test-manifest-path2
+            annotation: one
+            required: true
+            path: test-local-path
           contextType: tmc
 currentContext:
     k8s: test-mc
@@ -166,7 +185,7 @@ func TestContextsIntegrationWithPatchStrategy(t *testing.T) {
 	assert.NoError(t, err)
 
 	//create temp config metadata file
-	f2, err := os.CreateTemp("", "tanzu_config")
+	f2, err := os.CreateTemp("", "tanzu_config_metadata")
 	assert.Nil(t, err)
 	err = os.WriteFile(f2.Name(), []byte(metadata), 0644)
 	assert.Nil(t, err)
@@ -205,6 +224,12 @@ func TestContextsIntegrationWithPatchStrategy(t *testing.T) {
 				},
 				ContextType: configapi.CtxTypeTMC,
 			},
+			{
+				Local: &configapi.LocalDiscovery{
+					Name: "test-local",
+				},
+				ContextType: configapi.CtxTypeTMC,
+			},
 		},
 	}
 	assert.Nil(t, err)
@@ -228,6 +253,13 @@ func TestContextsIntegrationWithPatchStrategy(t *testing.T) {
 				},
 				ContextType: configapi.CtxTypeTMC,
 			},
+			{
+				Local: &configapi.LocalDiscovery{
+					Name: "test-local",
+					Path: "test-local-path",
+				},
+				ContextType: configapi.CtxTypeTMC,
+			},
 		},
 	}
 	err = SetContext(updatedCtx, true)
@@ -236,5 +268,5 @@ func TestContextsIntegrationWithPatchStrategy(t *testing.T) {
 	//Expectations on file content
 	file, err := os.ReadFile(f1.Name())
 	assert.NoError(t, err)
-	assert.Equal(t, []byte(expectedConfig), file)
+	assert.Equal(t, expectedConfig, string(file))
 }
