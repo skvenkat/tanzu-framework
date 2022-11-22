@@ -17,6 +17,7 @@ const (
 
 // GetConfigMetadataFeatureFlags retrieves feature flags
 func GetConfigMetadataFeatureFlags() (map[string]string, error) {
+	// Retrieve Metadata config node
 	node, err := getMetadataNode()
 	if err != nil {
 		return nil, err

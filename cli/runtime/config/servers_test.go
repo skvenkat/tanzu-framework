@@ -22,6 +22,7 @@ func TestSetGetDeleteServer(t *testing.T) {
 	err = os.Setenv(EnvConfigKey, f1.Name())
 	assert.NoError(t, err)
 
+	// Setup config-v2 data
 	f2, err := os.CreateTemp("", "tanzu_config_v2")
 	assert.Nil(t, err)
 	err = os.WriteFile(f2.Name(), []byte(""), 0644)

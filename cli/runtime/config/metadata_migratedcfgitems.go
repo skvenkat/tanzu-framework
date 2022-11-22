@@ -79,6 +79,7 @@ func SetDefaultMigratedCfgItems(values []string) error {
 }
 
 func getMigratedCfgItems(node *yaml.Node) ([]*MigratedCfgItem, error) {
+	// convert yaml node to metadata struct
 	metadata, err := convertNodeToMetadata(node)
 	if err != nil {
 		return nil, err

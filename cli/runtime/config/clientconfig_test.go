@@ -133,7 +133,7 @@ func TestClientConfig(t *testing.T) {
 	require.Equal(t, c.CurrentServer, "")
 }
 
-func TestConfigLegacyDir(t *testing.T) {
+func TestConfigLegacyDirWithEnvConfigKey(t *testing.T) {
 	r := randString()
 	// Setup config data
 	f1, err := os.CreateTemp("", "tanzu_config")
@@ -231,11 +231,14 @@ func TestConfigLegacyDir(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, c.KnownServers, 2)
 	require.Equal(t, c.CurrentServer, "test1")
+
 	err = RemoveServer("test")
 	require.NoError(t, err)
+
 	c, err = GetClientConfig()
 	require.NoError(t, err)
 	require.Len(t, c.KnownServers, 1)
+
 	tmp := LocalDirName
 	LocalDirName = legacyLocalDirName
 	configCopy, err := GetClientConfig()
@@ -244,8 +247,124 @@ func TestConfigLegacyDir(t *testing.T) {
 		t.Errorf("ClientConfig object mismatch between legacy and new config location (-want +got): \n%s", diff)
 	}
 	LocalDirName = tmp
-	err = DeleteClientConfig()
+	//err = DeleteClientConfig()
+	//require.NoError(t, err)
+}
+
+func TestConfigLegacyDirWithoutEnvConfigKey(t *testing.T) {
+	r := randString()
+	// Setup config data
+	//f1, err := os.CreateTemp("", "tanzu_config")
+	//assert.Nil(t, err)
+	//err = os.WriteFile(f1.Name(), []byte(""), 0644)
+	//assert.Nil(t, err)
+	//
+	//err = os.Setenv(EnvConfigKey, f1.Name())
+	//assert.NoError(t, err)
+
+	func() {
+		LocalDirName = TestLocalDirName
+	}()
+	defer func() {
+		cleanupDir(LocalDirName)
+	}()
+
+	f2, err := os.CreateTemp("", "tanzu_config_v2")
+	assert.Nil(t, err)
+	err = os.WriteFile(f2.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigV2Key, f2.Name())
+	assert.NoError(t, err)
+
+	//Setup metadata
+	fMeta, err := os.CreateTemp("", "tanzu_config_metadata")
+	assert.Nil(t, err)
+	err = os.WriteFile(fMeta.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigMetadataKey, fMeta.Name())
+	assert.NoError(t, err)
+
+	// Cleanup
+	//defer func(name string) {
+	//	err = os.Remove(name)
+	//	assert.NoError(t, err)
+	//}(f1.Name())
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(f2.Name())
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(fMeta.Name())
+
+	// Setup legacy config dir.
+	legacyLocalDirName = fmt.Sprintf(".tanzu-test-legacy-%s", r)
+	legacyLocalDir, err := legacyLocalDir()
 	require.NoError(t, err)
+	err = os.MkdirAll(legacyLocalDir, 0755)
+	require.NoError(t, err)
+	legacyCfgPath, err := legacyConfigPath()
+	require.NoError(t, err)
+	defer cleanupDir(legacyLocalDirName)
+
+	//Setup data
+	testCfg := &configapi.ClientConfig{
+		KnownServers: []*configapi.Server{
+			{
+				Name: "test",
+				Type: configapi.ManagementClusterServerType,
+				ManagementClusterOpts: &configapi.ManagementClusterServer{
+					Path: "test",
+				},
+			},
+		},
+		CurrentServer: "test",
+	}
+
+	AcquireTanzuConfigLock()
+	err = StoreClientConfig(testCfg)
+	ReleaseTanzuConfigLock()
+	require.NoError(t, err)
+	require.FileExists(t, legacyCfgPath)
+
+	_, err = GetClientConfig()
+	require.NoError(t, err)
+	server1 := &configapi.Server{
+		Name: "test1",
+		Type: configapi.ManagementClusterServerType,
+		ManagementClusterOpts: &configapi.ManagementClusterServer{
+			Path: "test1",
+		},
+	}
+
+	err = SetServer(server1, true)
+	require.NoError(t, err)
+
+	c, err := GetClientConfig()
+	require.NoError(t, err)
+	require.Len(t, c.KnownServers, 2)
+	require.Equal(t, c.CurrentServer, "test1")
+
+	err = RemoveServer("test")
+	require.NoError(t, err)
+
+	c, err = GetClientConfig()
+	require.NoError(t, err)
+	require.Len(t, c.KnownServers, 1)
+
+	tmp := LocalDirName
+	LocalDirName = legacyLocalDirName
+	configCopy, err := GetClientConfig()
+	require.NoError(t, err)
+	if diff := cmp.Diff(c, configCopy); diff != "" {
+		t.Errorf("ClientConfig object mismatch between legacy and new config location (-want +got): \n%s", diff)
+	}
+	LocalDirName = tmp
 }
 
 func TestGetDiscoverySources(t *testing.T) {

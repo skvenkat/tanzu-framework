@@ -104,9 +104,8 @@ currentContext:
 }
 
 func TestGetClientConfigWithLockAndWithoutLock(t *testing.T) {
-	// Setup data
-	cfg, cfgV2 := setupCfgAndCfgV2Data()
 	// Setup config data
+	cfg, cfgV2 := setupCfgAndCfgV2Data()
 	f1, err := os.CreateTemp("", "tanzu_config")
 	assert.Nil(t, err)
 	err = os.WriteFile(f1.Name(), []byte(cfg), 0644)
@@ -122,7 +121,7 @@ func TestGetClientConfigWithLockAndWithoutLock(t *testing.T) {
 	err = os.Setenv(EnvConfigV2Key, f2.Name())
 	assert.NoError(t, err)
 
-	//Setup metadata
+	//Setup config metadata
 	f3, err := os.CreateTemp("", "tanzu_config_metadata")
 	assert.Nil(t, err)
 	err = os.WriteFile(f3.Name(), []byte(""), 0644)

@@ -70,15 +70,24 @@ func persistConfig(node *yaml.Node) error {
 		*itemNode = *itemCfgNode
 	}
 
+	// Store the not migrated config data to config.yaml
 	err = persistClientConfig(&cfgNodeToPersist)
 	if err != nil {
 		return err
 	}
 
+	// Store the migrated config data to config-v2.yaml
 	err = persistClientConfigV2(cfgV2Node)
 	if err != nil {
 		return err
 	}
+
+	// Store the config data to legacy client config file/location
+	err = persistLegacyClientConfig(node)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -109,7 +118,6 @@ func persistNode(node *yaml.Node, opts ...CfgOpts) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to write the config to file")
 	}
-	storeConfigToLegacyDir(data)
 	return nil
 }
 
