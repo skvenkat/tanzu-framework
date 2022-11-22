@@ -5,8 +5,9 @@ package config
 
 import (
 	"github.com/pkg/errors"
-	"github.com/vmware-tanzu/tanzu-framework/cli/runtime/config/nodeutils"
 	"gopkg.in/yaml.v3"
+
+	"github.com/vmware-tanzu/tanzu-framework/cli/runtime/config/nodeutils"
 )
 
 type MigratedCfgItem struct {

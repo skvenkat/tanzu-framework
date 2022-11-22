@@ -8,8 +8,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	configapi "github.com/vmware-tanzu/tanzu-framework/cli/runtime/apis/config/v1alpha1"
+
 	"gopkg.in/yaml.v3"
+
+	configapi "github.com/vmware-tanzu/tanzu-framework/cli/runtime/apis/config/v1alpha1"
 )
 
 func setupCfgAndCfgV2Data() (string, string) {
