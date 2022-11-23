@@ -145,7 +145,7 @@ func getClientConfigNoLock() (*yaml.Node, error) {
 	}
 
 	if migrate {
-		return getClientConfigNodeNoLock()
+		return getClientConfigV2NodeNoLock()
 	}
 	return getMultiConfigNoLock()
 }

@@ -710,3 +710,94 @@ func TestSetSingleServer(t *testing.T) {
 		})
 	}
 }
+
+func TestSetSingleServerWithMigrateToNewConfig(t *testing.T) {
+	// Setup config data
+	f1, err := os.CreateTemp("", "tanzu_config")
+	assert.Nil(t, err)
+	err = os.WriteFile(f1.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigKey, f1.Name())
+	assert.NoError(t, err)
+
+	f2, err := os.CreateTemp("", "tanzu_config_v2")
+	assert.Nil(t, err)
+	err = os.WriteFile(f2.Name(), []byte(""), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigV2Key, f2.Name())
+	assert.NoError(t, err)
+
+	//Setup metadata
+	fMeta, err := os.CreateTemp("", "tanzu_config_metadata")
+	assert.Nil(t, err)
+	err = os.WriteFile(fMeta.Name(), []byte(setupConfigMetadataWithMigrateToNewConfig()), 0644)
+	assert.Nil(t, err)
+
+	err = os.Setenv(EnvConfigMetadataKey, fMeta.Name())
+	assert.NoError(t, err)
+
+	// Cleanup
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(f1.Name())
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(f2.Name())
+
+	defer func(name string) {
+		err = os.Remove(name)
+		assert.NoError(t, err)
+	}(fMeta.Name())
+
+	tcs := []struct {
+		name    string
+		server  *configapi.Server
+		current bool
+		errStr  string
+	}{
+		{
+			name: "success k8s current",
+			server: &configapi.Server{
+				Name: "test",
+				Type: "managementcluster",
+				ManagementClusterOpts: &configapi.ManagementClusterServer{
+					Endpoint: "test-endpoint",
+					Path:     "test-path",
+					Context:  "test-server",
+				},
+				DiscoverySources: []configapi.PluginDiscovery{
+					{
+						GCP: &configapi.GCPDiscovery{
+							Name:         "test",
+							Bucket:       "test-bucket",
+							ManifestPath: "test-manifest-path",
+						},
+						ContextType: configapi.CtxTypeTMC,
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			err := SetServer(tc.server, tc.current)
+			if tc.errStr == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.EqualError(t, err, tc.errStr)
+			}
+			ok, err := ServerExists(tc.server.Name)
+			assert.True(t, ok)
+			assert.NoError(t, err)
+			ok, err = ServerExists(tc.server.Name)
+			assert.True(t, ok)
+			assert.NoError(t, err)
+		})
+	}
+}

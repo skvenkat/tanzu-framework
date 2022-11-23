@@ -74,8 +74,8 @@ func getConfigMetadataFeature(node *yaml.Node, key string) (string, error) {
 	return "", errors.New("not found")
 }
 
-// DeleteFeatureFlag delete the env entry of specified key
-func DeleteFeatureFlag(key string) error {
+// DeleteConfigMetadataFeatureFlag delete the env entry of specified key
+func DeleteConfigMetadataFeatureFlag(key string) error {
 	AcquireTanzuConfigLock()
 	defer ReleaseTanzuConfigLock()
 	node, err := getMetadataNode()
@@ -119,8 +119,8 @@ func deleteFeatureFlag(node *yaml.Node, key string) (err error) {
 	return nil
 }
 
-// SetFeatureFlag add or update a env key and value
-func SetFeatureFlag(key, value string) (err error) {
+// SetConfigMetadataFeatureFlag add or update a env key and value
+func SetConfigMetadataFeatureFlag(key, value string) (err error) {
 	AcquireTanzuConfigLock()
 	defer ReleaseTanzuConfigLock()
 	node, err := getMetadataNode()

@@ -111,7 +111,7 @@ servers:
           contextType: tmc
 current: test-mc
 `
-
+	//nolint:goconst
 	expectedCFG2 := `contexts:
     - name: test-mc
       type: k8s

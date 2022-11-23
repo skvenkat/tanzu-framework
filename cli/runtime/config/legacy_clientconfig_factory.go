@@ -14,10 +14,18 @@ import (
 
 // GetClientConfig retrieves the config from the local directory with file lock
 func GetClientConfig() (cfg *configapi.ClientConfig, err error) {
-	// Acquire tanzu config lock
-	AcquireTanzuConfigLock()
-	defer ReleaseTanzuConfigLock()
-	return GetClientConfigNoLock()
+	// Retrieve client config node
+	node, err := getClientConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	cfg, err = convertNodeToClientConfig(node)
+	if err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
 }
 
 // GetClientConfigNoLock retrieves the config from the local directory without acquiring the lock

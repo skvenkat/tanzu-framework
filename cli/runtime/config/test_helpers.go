@@ -3,6 +3,14 @@
 
 package config
 
+func setupConfigMetadataWithMigrateToNewConfig() string {
+	metadata := `configMetadata:
+  featureFlags:
+    migrateToNewConfig: true`
+
+	return metadata
+}
+
 //nolint:funlen
 func setupMultiCfgData() (string, string) {
 	cfg := `servers:
